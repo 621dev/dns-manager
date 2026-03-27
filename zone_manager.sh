@@ -10,30 +10,32 @@ manage_zone(){
     zone_list_reload zonearr
     while :
     do
-        clear
+        sleep 1 && clear
         show_zone_list zonearr ${currentpage}
-        echo "[. 다음 페이지"
-        echo "]. 이전 페이지" 
-        echo ":숫자. 해당 번호의 페이지로 이동"
+        echo "ZONE은 도메인과 IP 주소 간의 연결 정보를 담고 있는 파일입니다."
+        echo "도메인이나 IP를 입력하여 ZONE을 추가, 수정, 삭제가 가능합니다."
         echo "-----------------------------------------------"
-        echo "a. ZONE 조회 (미구현)"
-        echo "b. ZONE 추가"
-        echo "c. ZONE 수정 (미구현)"
-        echo "d. ZONE 삭제"
-        echo "0. 메인 메뉴 복귀"
+        echo "[. 다음 페이지    ]. 이전 페이지      :숫자. 해당 번호의 페이지로 이동"
+        echo "-----------------------------------------------"
+        echo "1. ZONE 조회 (미구현)"
+        echo "2. ZONE 추가"
+        echo "3. ZONE 수정 (미구현)"
+        echo "4. ZONE 삭제"
+        echo "q. 메인 메뉴 복귀"
         echo "==============================================="
         read -p "원하는 작업을 선택하세요 : " input
         case "$input" in
-            "a"|"c")
+            1 | 3)
                 echo "미구현 항목입니다."
                 ;;
-            "b") 
+            2) 
                 select_add_zone
+                zone_list_reload zonearr
                 ;;
-            "d")
-                select_delete_zone
+            4)
+                select_delete_zone zonearr
                 ;;
-            0)
+            "q")
                 return 0
                 ;;
             *)
