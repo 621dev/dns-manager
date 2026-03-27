@@ -1,5 +1,4 @@
 #!/bin/bash
-
 select_add_zone() {
     local input
     while :
@@ -45,7 +44,7 @@ select_delete_zone() {
             1)
                 echo "============================================"
                 echo "기준 도메인을 입력해주세요"
-                echo "(www와 같은 Host Name을 제외하고 입력해야 합니다. 예 : naver.com)"
+                echo "(www와 같은 서비스 이름을 제외하고 입력해야 합니다. 예 : naver.com)"
                 echo "0. 이전 메뉴 복귀"
                 echo "============================================"
                 read -p "도메인 : " inputdomain
@@ -85,6 +84,45 @@ select_delete_zone() {
                         echo "잘못된 입력입니다. 다시 시도해주세요."
                         ;;
                 esac
+                ;;
+            "q")
+                return 0
+                ;;
+            *)
+                echo "잘못된 입력입니다. 다시 시도해주세요."
+                ;;
+        esac
+    done
+}
+
+select_update_zone() {
+    local -n _refzonearr=$1
+    while :
+    do
+        sleep 2 && clear
+        show_zone_list "${!_refzonearr}" ${currentpage}
+        echo "[. 다음 페이지    | ]. 이전 페이지    | :숫자. 해당 번호의 페이지로 이동"
+        echo "-----------------------------------------------"
+        echo :숫자. 해당 번호의 ZONE 삭제
+        echo "1. 서비스 수정"
+        echo "2. 호스트 수정"
+        echo "3. zone 파일 수정"
+        echo "q. 메인 메뉴 복귀"
+        echo "==============================================="
+        read -p "원하는 작업을 선택하세요 : " input
+        case "$input" in
+            1)
+                echo "============================================"
+                echo ""
+                echo ""
+                echo "============================================"
+                read -p "도메인 : " inputdomain
+                ;;
+            2)
+                
+                ;;
+            3)
+                
                 ;;
             "q")
                 return 0
@@ -417,6 +455,7 @@ delete_zone_declaration() {
 
     _startline=$(grep -n "^zone[[:space:]]\+\"$_target\"[[:space:]]\+IN" /etc/named.rfc1912.zones | cut -d: -f1)
     if [ ! -n "$_startline" ]; then return 1; fi
+
     # 시작 행 이후에 나오는 '첫 번째 다음 zone'의 행 번호 찾기
     _endline=$(tail -n +$((_startline + 1)) /etc/named.rfc1912.zones | grep -n "^zone[[:space:]]\+\"" | cut -d: -f1)
     
@@ -433,4 +472,25 @@ delete_zone_declaration() {
     # 삭제
     sed -i "${_startline},${_endline}d" /etc/named.rfc1912.zones
     echo "${_target} 존 선언이 삭제되었습니다."
-}    
+}
+
+update_service() {
+    
+}
+
+# TODO
+# 서비스 네임과 도메인이 들어오면 서비스를 추가하는 함수
+# 서비스 네임과 도메인이 들어오면 서비스를 삭제하는 함수
+# 호스트와 네트워크가 들어오면 레코드를 추가하는 함수
+# 호스트와 네트워크가 들어오면 레코드를 삭제하는 함수
+# 존 파일 수정 (refresh, retry, expire, minimum)
+# 환경설정 - named.conf 설정, listen-on port v6, allow-query, 슬레이브 서버 지정
+
+# 슬레이브 변경
+# named.conf : listen-on, allow-query 수정
+# Slave 서버 rfc1912.zones 수정
+# 자동으로 추가할 순 없을까?
+# 안되면 정방향 도메인 연속입력, 역방향 네트워크 연속입력으로 처리
+
+# 슬레이브 서버 지정
+# ip를 입력한 후 zone 파일 리스트를 보여주고 연속으로 입력하면 (숫자로도 가능) 자동으로 기본값으로 추가하는 형식
