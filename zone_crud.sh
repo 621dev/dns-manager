@@ -7,19 +7,86 @@ select_add_zone() {
         echo "============================================"
         echo "1. 정방향 생성"
         echo "2. 역방향 생성"
-        echo "0. 이전 메뉴 복귀"
+        echo "q. 이전 메뉴 복귀"
         echo "============================================"
         read -p "원하는 작업을 선택하세요 : " input
         case $input in
             1)
                 add_forward_zone
-                zone_list_reload zonearr
                 ;;
             2)
                 add_reverse_zone
-                zone_list_reload zonearr
                 ;;
-            0) 
+            "q") 
+                return 0
+                ;;
+            *)
+                echo "잘못된 입력입니다. 다시 시도해주세요."
+                ;;
+        esac
+    done
+}
+
+select_delete_zone() {
+    local -n _refzonearr=$1
+    while :   
+    do
+        sleep 2 && clear
+        show_zone_list "${!_refzonearr}" ${currentpage}
+        echo "[. 다음 페이지    | ]. 이전 페이지    | :숫자. 해당 번호의 페이지로 이동"
+        echo "-----------------------------------------------"
+        echo :숫자. 해당 번호의 ZONE 삭제
+        echo "1. 도메인을 입력하여 삭제 (정방향 삭제)"
+        echo "2. 네트워크 주소를 입력하여 삭제 (역방향 HOST, 네트워크 삭제)"
+        echo "q. 메인 메뉴 복귀"
+        echo "==============================================="
+        read -p "원하는 작업을 선택하세요 : " input
+        case "$input" in 
+            1)
+                echo "============================================"
+                echo "기준 도메인을 입력해주세요"
+                echo "(www와 같은 Host Name을 제외하고 입력해야 합니다. 예 : naver.com)"
+                echo "0. 이전 메뉴 복귀"
+                echo "============================================"
+                read -p "도메인 : " inputdomain
+                if [ "$inputdomain" == "0" ]; then continue
+                fi
+                domain_delete_zone "$inputdomain"
+                zone_list_reload "${!_refzonearr}"
+                ;;
+            2)
+                echo "============================================"
+                echo "삭제할 네트워크 주소를 입력해주세요"
+                echo "(호스트를 제외하고 입력해야 합니다. 예 : 192.168.10)"
+                echo "q. 이전 메뉴 복귀"
+                echo "============================================"
+                read -p "네트워크 : " inputnetwork
+                if [ "$inputnetwork" == "q" ]; then continue
+                fi
+                echo "============================================"
+                echo "1. 네트워크 주소 삭제"
+                echo "2. 호스트 주소 삭제"
+                echo "q. 메뉴 복귀"
+                echo "============================================"
+                read -p "원하는 작업을 선택하세요 : " input
+                case "$input" in
+                    1)
+                        network_delete_zone "$inputnetwork"
+                        zone_list_reload "${!_refzonearr}"
+                        ;;
+                    2)
+                        hostip_delete_zone "$inputnetwork"
+                        zone_list_reload "${!_refzonearr}"
+                        ;;
+                    "q")
+                        continue
+                        ;;
+                    *)
+                        echo "잘못된 입력입니다. 다시 시도해주세요."
+                        ;;
+                esac
+                ;;
+            "q")
                 return 0
                 ;;
             *)
@@ -42,11 +109,10 @@ add_forward_zone() {
         echo "============================================"
         echo "기준 도메인을 입력해주세요"
         echo "(www와 같은 Host Name을 제외하고 입력해야합니다. 예 : naver.com)"
-        echo "0.이전 메뉴 복귀"
+        echo "q.이전 메뉴 복귀"
         echo "============================================"
         read -p "도메인 : " inputdomain
-        if [ "$inputdomain" == "0" ]; then return 0
-        fi
+        if [ "$inputdomain" == "q" ]; then return 0; fi
         
         # 도메인 유효성 검사 TODO
         
@@ -77,13 +143,13 @@ add_forward_zone() {
             fi
             break
         done
+
         # 서비스 입력
         servicearr=()
         while :
         do
             read -p "서비스를 입력해주세요 (www, mail, @ 등 / 다음 단계로 진행하려면 1 입력) : " inputservice
-            if [ "$inputservice" == "1" ]; then break
-            fi
+            if [ "$inputservice" == "1" ]; then break; fi
             servicearr+=("$inputservice")
             echo "현재 입력된 서비스 : ${servicearr[@]}"
         done
@@ -124,6 +190,8 @@ EOF
         echo "${inputdomain}의 zone 파일 소유자 및 그룹 권한을 설정합니다."
         chown root:named /var/named/${inputdomain}.zone
         chmod 640 /var/named/${inputdomain}.zone
+        
+        rndc reload
     done
 }
 
@@ -145,12 +213,11 @@ add_reverse_zone() {
         echo "============================================"
         echo "IP를 입력해주세요"
         echo "(예 : 192.168.10.125)"
-        echo "0.이전 메뉴 복귀"
+        echo "q.이전 메뉴 복귀"
         echo "============================================"
         read -p "IP : " inputip
-        if [ "$inputip" == "0" ]; then return 0
-        elif ! check_ip "$inputip"; then continue
-        fi
+        if [ "$inputip" == "q" ]; then return 0
+        elif ! check_ip "$inputip"; then continue; fi
         iparr=( $(split_dot "$inputip") )
         hostoctet=${iparr[3]}
         # zone 선언 검사
@@ -175,17 +242,16 @@ EOF
             echo "============================================"
             echo "기준 도메인을 입력해주세요"
             echo "(www와 같은 Host Name을 제외하고 입력해야합니다. 예 : naver.com)"
-            echo "0.이전 메뉴 복귀"
+            echo "q.이전 메뉴 복귀"
             echo "============================================"
             read -p "도메인 : " inputdomain
-            if [ "$inputdomain" == "0" ]; then return 0
+            if [ "$inputdomain" == "q" ]; then return 0
             fi
             break
         done
 
-        read -p "서비스를 입력해주세요 (www, mail, @ 등 / 이전 메뉴 복귀 0) : " inputservice
-        if [ "$inputservice" == "0" ]; then return 0
-        fi
+        read -p "서비스를 입력해주세요 (www, mail, @ 등 / 이전 메뉴 복귀 q) : " inputservice
+        if [ "$inputservice" == "q" ]; then return 0; fi
 
         echo "DEBUG: 검사할 경로 = /var/named/${reverseip}.rev"
         echo "DEBUG: 파일 존재 여부 = $([ -f "/var/named/${reverseip}.rev" ] && echo '존재' || echo '없음')"
@@ -224,56 +290,7 @@ EOF
             chmod 640 /var/named/${reverseip}.rev
         fi
     echo "${inputip} 역방향 zone 생성을 완료하였습니다."
-    done
-}
-
-select_delete_zone() {
-    while :   
-    do
-        sleep 1
-        clear
-        show_zone_list zonearr ${currentpage}
-        echo "[. 다음 페이지"
-        echo "]. 이전 페이지" 
-        echo ":숫자. 해당 번호의 페이지로 이동"
-        echo "-----------------------------------------------"
-        echo :숫자. 해당 번호의 ZONE 삭제
-        echo "a. 도메인을 입력하여 삭제 (정방향 삭제)"
-        echo "b. 역방향 ip를 입력하여 삭제 (역방향 삭제)"
-        echo "0. 메인 메뉴 복귀"
-        echo "==============================================="
-        read -p "원하는 작업을 선택하세요 : " input
-        case "$input" in 
-            a)
-                echo "============================================"
-                echo "기준 도메인을 입력해주세요"
-                echo "(www와 같은 Host Name을 제외하고 입력해야합니다. 예 : naver.com)"
-                echo "0.이전 메뉴 복귀"
-                echo "============================================"
-                read -p "도메인 : " inputdomain
-                if [ "$inputdomain" == "0" ]; then continue
-                fi
-                domain_delete_zone "$inputdomain"
-                ;;
-            b)
-                echo "============================================"
-                echo "역방향 삭제할 IP를 입력해주세요"
-                echo "(예 : 192.168.10.125 — 해당 IP의 대역 기준으로 삭제)"
-                echo "0.이전 메뉴 복귀"
-                echo "============================================"
-                read -p "IP : " inputip
-                if [ "$inputip" == "0" ]; then continue
-                elif ! check_ip "$inputip"; then continue
-                fi
-                ip_delete_zone "$inputip"
-                ;;
-            0)
-                return 0
-                ;;
-            *)
-                echo "잘못된 입력입니다. 다시 시도해주세요."
-                ;;
-        esac
+    rndc reload
     done
 }
 
@@ -297,21 +314,22 @@ domain_delete_zone() {
     fi
 
     # rfc1912.zones 파일에서 해당 도메인을 삭제
-    mkdir -p "$backuppath/rfc1912.zones/" &>> "$LOG_FILE"
-    cp "/etc/named.rfc1912.zones" "$backuppath/rfc1912.zones/rfc1912.zones_$(date +%Y%m%d_%H%M).bak" &>> "$LOG_FILE"
-    sed -i "/^zone \"${inputdomain}\" IN/, /};/d" /etc/named.rfc1912.zones
-    # 해당 zone 파일을 삭제
+    delete_zone_declaration "$inputdomain"
+
+    # zone 파일을 백업 후 삭제
     local backuppath="$SCRIPT_DIR/dns_backup_$(date +%Y%m%d)/zonefile"
     mkdir -p "$backuppath" &>> "$LOG_FILE"
     cp "/var/named/${inputdomain}.zone" "$backuppath/${inputdomain}.zone_$(date +%Y%m%d_%H%M).bak" &>> "$LOG_FILE"
     echo "${inputdomain}.zone 파일이 백업되었습니다. (백업 위치 : $backuppath/${inputdomain}.zone_$(date +%Y%m%d_%H%M).bak)"
     rm -rf "/var/named/${inputdomain}.zone"
     echo "${inputdomain} 도메인이 삭제되었습니다."
+    rndc reload
 }
 
-# ip를 변수로 받아 해당 역방향 zone을 삭제
-ip_delete_zone() {
-    local inputip=$1
+# 네트워크를 변수로 받아 해당 역방향 네트워크를 전체 삭제 (네트워크 대역대 삭제)
+network_delete_zone() {
+    local inputip="${1}.255"    # $1 : 255.255.255
+    if ! check_ip "$inputip"; then return 1; fi
     local -a iparr
     iparr=( $(split_dot "$inputip") )
     local reverseip="${iparr[2]}.${iparr[1]}.${iparr[0]}"
@@ -321,24 +339,98 @@ ip_delete_zone() {
     # zone 선언 확인
     if ! grep -E "^zone \"${reverseip}\.in-addr\.arpa\" IN" /etc/named.rfc1912.zones &>> "$LOG_FILE"; then
         echo "${reverseip}.in-addr.arpa 는 named.rfc1912.zones에 선언되지 않았습니다."
+        echo "${reverseip} 대역대는 등록되지 않았습니다."
         return 1
     fi
 
     # zone 파일 확인
     if [ ! -f "$revfile" ]; then
         echo "${reverseip}.rev 파일이 존재하지 않습니다."
-        return 1
+        echo "${reverseip} 네트워크는 등록되지 않았습니다."
     fi
 
     # rfc1912.zones에서 해당 역방향 선언 삭제 (백업 후)
-    mkdir -p "$backuppath/rfc1912.zones/" &>> "$LOG_FILE"
-    cp /etc/named.rfc1912.zones "$backuppath/rfc1912.zones/rfc1912.zones_$(date +%Y%m%d_%H%M).bak" &>> "$LOG_FILE"
-    sed -i "/^zone \"${reverseip}\.in-addr\.arpa\" IN/, /};/d" /etc/named.rfc1912.zones
+    delete_zone_declaration "${reverseip}.in-addr.arpa"
 
     # zone 파일 백업 후 삭제
     mkdir -p "$backuppath/zonefile" &>> "$LOG_FILE"
     cp "$revfile" "$backuppath/zonefile/${reverseip}.rev_$(date +%Y%m%d_%H%M).bak" &>> "$LOG_FILE"
     echo "${reverseip}.rev 파일이 백업되었습니다. (백업 위치 : $backuppath/zonefile/)"
     rm -f "$revfile"
-    echo "${reverseip}.in-addr.arpa 역방향 zone이 삭제되었습니다."
+    echo "${reverseip}.in-addr.arpa 역방향 네트워크가 삭제되었습니다."
+    rndc reload
 }
+
+hostip_delete_zone() {
+    local inputnetwork=$1
+    local -a iparr
+    iparr=( $(split_dot "$inputnetwork") )
+    local reverseip="${iparr[2]}.${iparr[1]}.${iparr[0]}"
+    local revfile="/var/named/${reverseip}.rev"
+    local backuppath="$SCRIPT_DIR/dns_backup_$(date +%Y%m%d)"
+
+    # zone 선언 확인
+    if ! grep -E "^zone \"${reverseip}\.in-addr\.arpa\" IN" /etc/named.rfc1912.zones &>> "$LOG_FILE"; then
+        echo "${reverseip}.in-addr.arpa는 named.rfc1912.zones에 선언되지 않았습니다."
+        echo "${reverseip} 대역대는 등록되지 않았습니다."
+        return 1
+    fi
+
+    while :
+    do
+        # TODO : 호스트 목록 조회
+        echo "============================================"
+        echo "삭제할 호스트 IP를 입력해주세요 (현재 입력한 네트워크 : $inputnetwork)"
+        echo "전체 IP의 마지막 부분만 입력해야합니다. 예 : 192.168.10.125의 125 부분"
+        echo "q. 이전 메뉴 복귀"
+        echo "============================================"
+        read -p "호스트 IP : " inputhost
+        if [ "$inputhost" == "q" ]; then return 0
+        elif ! check_ip "${inputnetwork}.${inputhost}"; then 
+            echo "IP : ${inputnetwork}.${inputhost}"
+            echo "잘못된 IP 형식입니다. 다시 입력해주세요."
+            continue
+        fi
+        
+        # zone 파일에서 해당 호스트 삭제 (백업)
+        # 입력된 호스트로 시작하고 공백 상관없이 IN PTR에 패턴인 행을 삭제
+        mkdir -p "$backuppath/zonefile" &>> "$LOG_FILE"
+        cp "$revfile" "$backuppath/zonefile/${reverseip}.rev_$(date +%Y%m%d_%H%M).bak" &>> "$LOG_FILE"
+        echo "${reverseip}.rev 파일이 백업되었습니다. (백업 위치 : $backuppath/zonefile/)"
+        
+        # 시리얼 번호 변경 필수
+        local _serial=$(awk '/serial/ {print $1}' "$revfile")
+        local _newserial=$((_serial + 1))
+        sed -i "s/${_serial}/${_newserial}/" "$revfile"
+        
+        sed -i "/^${inputhost}[[:space:]]\+IN[[:space:]]\+PTR/d" "$revfile"
+        echo "${inputnetwork}.${inputhost} 호스트가 삭제되었습니다."
+        rndc reload
+    done
+}
+
+# 존 선언 삭제 ($1 : 삭제할 도메인 / 네트워크 IP)
+delete_zone_declaration() {
+    local _target=$1
+    local _startline=0
+    local _endline=0
+
+    _startline=$(grep -n "^zone[[:space:]]\+\"$_target\"[[:space:]]\+IN" /etc/named.rfc1912.zones | cut -d: -f1)
+    if [ ! -n "$_startline" ]; then return 1; fi
+    # 시작 행 이후에 나오는 '첫 번째 다음 zone'의 행 번호 찾기
+    _endline=$(tail -n +$((_startline + 1)) /etc/named.rfc1912.zones | grep -n "^zone[[:space:]]\+\"" | cut -d: -f1)
+    
+    if [ -n "$_endline" ]; then
+        _endline=$((_startline + _endline - 1))
+    else
+        _endline=$(wc -l /etc/named.rfc1912.zones | awk '{print $1}')
+    fi
+
+    # 백업
+    mkdir -p "$backuppath/rfc1912.zones/" &>> "$LOG_FILE"
+    cp "/etc/named.rfc1912.zones" "$backuppath/rfc1912.zones/rfc1912.zones_$(date +%Y%m%d_%H%M).bak" &>> "$LOG_FILE"
+
+    # 삭제
+    sed -i "${_startline},${_endline}d" /etc/named.rfc1912.zones
+    echo "${_target} 존 선언이 삭제되었습니다."
+}    

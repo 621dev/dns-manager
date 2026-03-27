@@ -35,10 +35,12 @@ do
     echo "3. DNS 설정 (미구현)"
     echo "4. Zone 관리"
     echo "5. 방화벽 포트 관리 (미구현)"
-    echo "0. 종료" 
+    echo "q. 종료" 
     echo "==============================================="
     read -p "원하는 작업을 선택하세요: " INPUT
     if [ -n "$BIND_VERSION" ]; then     # DNS 서버 설치
+        if [ "$INPUT" == "q" ]; then exit 0
+        fi
         case $INPUT in
             1)
                 echo "DNS 서비스가 설치 되어있습니다. 삭제 후 다시 시도해주세요."
@@ -50,10 +52,8 @@ do
                 echo "미구현 항목입니다."
                 ;;
             4)
-                select_zone
+                manage_zone
                 ;;
-            0)
-                exit 0;;    # 0은 정상 종료를 의미
             *)
                 echo "잘못된 입력입니다. 다시 시도해주세요."
                 ;;
@@ -68,9 +68,6 @@ do
                 ;;
             5)
                 echo "미구현 항목입니다."
-                ;;
-            0)
-                exit 0
                 ;;
             *)
                 echo "잘못된 입력입니다. 다시 시도해주세요."
