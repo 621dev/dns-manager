@@ -1,6 +1,11 @@
 #!/bin/bash
-# 해당 스크립트는 레드햇 계열 리눅스에서만 사용이 가능
-clear 
+# ============================================================
+# [메인 스크립트] DNS 매니저 진입점
+# install_named() : BIND 설치 (dns_crud.sh)
+# delete_named()  : BIND 삭제 (dns_crud.sh)
+# manage_zone()   : Zone 관리 메뉴 진입 (zone_manager.sh)
+# ============================================================
+clear
 
 # 로그 파일 (있으면 가져오고, 없으면 생성)
 # dirname : 파일의 경로만 가져옴
@@ -49,6 +54,8 @@ do
                 delete_named    # named 서비스 삭제 함수
                 ;;
             3|5)
+                # TODO: 옵션 3 (DNS 설정) - named.conf 편집 기능 미구현
+                # TODO: 옵션 5 (방화벽 포트 관리) 미구현
                 echo "미구현 항목입니다."
                 ;;
             4)
