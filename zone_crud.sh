@@ -2,13 +2,15 @@
 # ============================================================
 # select_add_zone()        : 정방향/역방향 Zone 추가 메뉴
 # select_delete_zone()     : Zone 삭제 메뉴 (도메인 또는 네트워크 기준)
-# select_update_zone()     : Zone 수정 메뉴 [미구현]
+# select_update_zone()     : Zone 수정 메뉴 (A/PTR 레코드)
 # add_forward_zone()       : 정방향 Zone 선언 및 zone 파일 생성
 # add_reverse_zone()       : 역방향 Zone 선언 및 .rev 파일 생성/수정
 # domain_delete_zone()     : 도메인 기준으로 정방향 Zone 삭제
 # network_delete_zone()    : 네트워크 대역 기준으로 역방향 Zone 전체 삭제
 # hostip_delete_zone()     : 역방향 Zone에서 특정 호스트 IP 레코드만 삭제
 # delete_zone_declaration(): rfc1912.zones에서 zone 선언 블록 삭제
+# update_service_record()  : 정방향 Zone의 A 레코드 추가/IP 변경/삭제
+# update_ptr_record()      : 역방향 Zone의 PTR 레코드 추가/변경/삭제
 # update_service()         : 서비스 수정 [미구현]
 # ============================================================
 
@@ -110,32 +112,23 @@ select_delete_zone() {
 
 select_update_zone() {
     local -n _refzonearr=$1
+    local _input
     while :
     do
-        sleep 2 && clear
-        show_zone_list "${!_refzonearr}" ${currentpage}
-        echo "[. 다음 페이지    | ]. 이전 페이지    | :숫자. 해당 번호의 페이지로 이동"
+        sleep 1 && clear
+        show_zone_list "${!_refzonearr}" 0
         echo "-----------------------------------------------"
-        echo :숫자. 해당 번호의 ZONE 삭제
         echo "1. 서비스 수정"
         echo "2. 호스트 수정"
-        echo "3. zone 파일 수정"
         echo "q. 메인 메뉴 복귀"
         echo "==============================================="
         read -p "원하는 작업을 선택하세요 : " _input
         case "$_input" in
             1)
-                echo "============================================"
-                echo ""
-                echo ""
-                echo "============================================"
-                read -p "도메인 : " _inputdomain
+                update_service_record
                 ;;
             2)
-                
-                ;;
-            3)
-                
+                update_ptr_record
                 ;;
             "q")
                 return 0

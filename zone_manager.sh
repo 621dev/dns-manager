@@ -31,8 +31,12 @@ manage_zone(){
         echo "==============================================="
         read -p "원하는 작업을 선택하세요 : " _input
         case "$_input" in
-            1 | 3)
+            1)
                 echo "미구현 항목입니다."
+                ;;
+            3)
+                select_update_zone _zonearr
+                zone_list_reload _zonearr
                 ;;
             2)
                 select_add_zone

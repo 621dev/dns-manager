@@ -1,6 +1,5 @@
 #!/bin/bash
 # ============================================================
-# [메인 스크립트] DNS 매니저 진입점
 # install_named() : BIND 설치 (dns_crud.sh)
 # delete_named()  : BIND 삭제 (dns_crud.sh)
 # manage_zone()   : Zone 관리 메뉴 진입 (zone_manager.sh)
