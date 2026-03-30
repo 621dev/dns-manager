@@ -36,15 +36,14 @@ do
     echo "==============================================="
     echo "1. DNS 서비스 설치"
     echo "2. DNS 삭제"
-    echo "3. DNS 설정 (미구현)"
+    echo "3. DNS 설정"
     echo "4. Zone 관리"
     echo "5. 방화벽 포트 관리 (미구현)"
     echo "q. 종료" 
     echo "==============================================="
     read -p "원하는 작업을 선택하세요: " INPUT
     if [ -n "$BIND_VERSION" ]; then     # DNS 서버 설치
-        if [ "$INPUT" == "q" ]; then exit 0
-        fi
+        if [ "$INPUT" == "q" ]; then exit 0; fi
         case $INPUT in
             1)
                 echo "DNS 서비스가 설치 되어있습니다. 삭제 후 다시 시도해주세요."
@@ -52,9 +51,7 @@ do
             2)
                 delete_named    # named 서비스 삭제 함수
                 ;;
-            3|5)
-                # TODO: 옵션 3 (DNS 설정) - named.conf 편집 기능 미구현
-                # TODO: 옵션 5 (방화벽 포트 관리) 미구현
+            3)  
                 echo "미구현 항목입니다."
                 ;;
             4)
@@ -84,3 +81,12 @@ done
 
 
 
+# 슬레이브 변경
+# 존 파일 수정 (refresh, retry, expire, minimum)
+# 환경설정 - named.conf 설정, listen-on port v6, allow-query, 슬레이브 서버 지정
+# named.conf : listen-on, allow-query 수정
+# Slave 서버 rfc1912.zones 수정
+# 자동으로 추가할 순 없을까?
+# 안되면 정방향 도메인 연속입력, 역방향 네트워크 연속입력으로 처리
+# 슬레이브 서버 지정
+# ip를 입력한 후 zone 파일 리스트를 보여주고 연속으로 입력하면 (숫자로도 가능) 자동으로 기본값으로 추가하는 형식

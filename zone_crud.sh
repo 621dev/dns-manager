@@ -32,8 +32,8 @@ add_forward_zone() {
 
         # zone 선언 파일 검사 (/etc/named.rfc1912.zone)
         if grep -E "^zone[[:space:]]+\"${_inputdomain}\"[[:space:]]+IN" /etc/named.rfc1912.zones &>> "$LOG_FILE"; then
-            echo "이미 ${_inputdomain} 도메인이 선언되어 있습니다."
-            echo "도메인을 삭제하고 다시 입력해주세요"
+            # rfc1912.zones 파일에서 해당 도메인을 삭제
+            delete_zone_declaration "$_inputdomain"
             continue
         fi
 
@@ -318,7 +318,7 @@ hostip_delete_zone() {
     done
 }
 
-# 존 선언 삭제 ($1 : 삭제할 도메인 / 네트워크 IP)
+# 존 선언 삭제 ($1 : 삭제할 도메인 / 네트워크 IP (in-addr.arpa 포함))
 delete_zone_declaration() {
     local _target=$1
     local _startline=0
@@ -465,17 +465,3 @@ delete_reverse_host() {
     echo "${_hostip}가 삭제되었습니다."
     rndc reload
 }
-
-# 슬레이브 변경
-
-# 존 파일 수정 (refresh, retry, expire, minimum)
-# 환경설정 - named.conf 설정, listen-on port v6, allow-query, 슬레이브 서버 지정
-
-
-# named.conf : listen-on, allow-query 수정
-# Slave 서버 rfc1912.zones 수정
-# 자동으로 추가할 순 없을까?
-# 안되면 정방향 도메인 연속입력, 역방향 네트워크 연속입력으로 처리
-
-# 슬레이브 서버 지정
-# ip를 입력한 후 zone 파일 리스트를 보여주고 연속으로 입력하면 (숫자로도 가능) 자동으로 기본값으로 추가하는 형식

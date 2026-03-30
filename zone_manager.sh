@@ -160,6 +160,7 @@ select_update_zone() {
     while :
     do
         sleep 1 && clear
+        ## TODO : zone 선언 수정
         show_zone_list "${!_refzonearr}" 0
         echo "-----------------------------------------------"
         echo "1. 서비스 수정"
@@ -349,7 +350,29 @@ split_dot() {
 
 zone_list_reload() {
     local -n _refarr=$1  # nameref - 참조로 받음
-    mapfile -t _refarr < <(awk -F'"' '/^zone "/ {print $2}' /etc/named.rfc1912.zones) 
+    local -a _default_zones=(
+        "localhost.localdomain"
+        "localhost"
+        "1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.ip6.arpa"
+        "1.0.0.127.in-addr.arpa" "0.in-addr.arpa"
+        "0.in-addr.arpa"
+        )
+    local -a _allzones
+    mapfile -t _allzones < <(awk -F'"' '/^zone "/ {print $2}' /etc/named.rfc1912.zones) 
+    
+
+    for _zone in "${_allzones[@]}"; do
+        _isdefault=false
+        for _default_zone in "${_default_zones[@]}"; do
+            if [[ "$_zone" == "$_default_zone" ]]; then
+                _isdefault=true
+                break
+            fi
+        done
+        if ! $_isdefault; then
+            _refarr+=("$_zone")
+        fi
+    done
     # awk -F'"' : "를 기준으로 분리
     # mapfile -t : 표준 입력을 배열로 저장
 }
