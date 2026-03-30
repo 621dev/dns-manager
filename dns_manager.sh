@@ -43,8 +43,8 @@ do
     echo "q. 종료" 
     echo "==============================================="
     read -p "원하는 작업을 선택하세요: " INPUT
+    if [ "$INPUT" == "q" ]; then exit 0; fi
     if [ -n "$BIND_VERSION" ]; then     # DNS 서버 설치
-        if [ "$INPUT" == "q" ]; then exit 0; fi
         case $INPUT in
             1)
                 echo "DNS 서비스가 설치 되어있습니다. 삭제 후 다시 시도해주세요."
