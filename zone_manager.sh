@@ -354,7 +354,7 @@ zone_list_reload() {
         "localhost.localdomain"
         "localhost"
         "1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.ip6.arpa"
-        "1.0.0.127.in-addr.arpa" "0.in-addr.arpa"
+        "1.0.0.127.in-addr.arpa"
         "0.in-addr.arpa"
         )
     local -a _allzones

@@ -328,10 +328,10 @@ delete_zone_declaration() {
     if [ ! -n "$_startline" ]; then return 1; fi
 
     # 시작 행 이후에 나오는 '첫 번째 다음 zone'의 행 번호 찾기
-    _endline=$(tail -n +$((_startline + 1)) /etc/named.rfc1912.zones | grep -En "^zone[[:space:]]+\"" | cut -d: -f1)
+    _endline=$(tail -n +$((_startline + 1)) /etc/named.rfc1912.zones | grep -En "^zone[[:space:]]+\"" | head -1 | cut -d: -f1)
     
     if [ -n "$_endline" ]; then
-        _endline=$((_startline + _endline))
+        _endline=$((_startline + _endline - 1))
     else
         _endline=$(wc -l /etc/named.rfc1912.zones | awk '{print $1}')
     fi

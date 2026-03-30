@@ -79,8 +79,7 @@ change_slave() {
         if check_ip "$_masterip"; then break; fi
     done
 
-    local _slaveip=$(hostname -I | awk '{print $1}')
-    sed -i "s/listen-on port 53 { .* };/listen-on port 53 { ${_slaveip}; };/" "/etc/named.conf"
+    sed -i "s/listen-on port 53 { .* };/listen-on port 53 { ${DNS_IP}; };/" "/etc/named.conf"
 
     # 백업
     mkdir -p "$backuppath/rfc1912.zones/" &>> "$LOG_FILE"
@@ -90,7 +89,7 @@ change_slave() {
     # 직접 입력
     
     # 가져온 named.rfc1912.zones 파일에 자동으로 추가
-    local -n _zonearr
+    local -a _zonearr
     zone_list_reload _zonearr
     for _zone in "${_zonearr[@]}"; do
         delete_zone_declaration "$_zone"
@@ -126,24 +125,24 @@ register_slave() {
         if check_ip "$_slaveip"; then break; fi
     done
     
-    local _masterip=$(hostname -I | awk '{print $1}')
-    sed -i "s/listen-on port 53 { .* };/listen-on port 53 { ${_masterip}; };/" "/etc/named.conf"
+    sed -i "s/listen-on port 53 { .* };/listen-on port 53 { ${DNS_IP}; };/" "/etc/named.conf"
 
     # 백업
     mkdir -p "$backuppath/rfc1912.zones/" &>> "$LOG_FILE"
     cp "/etc/named.rfc1912.zones" "$backuppath/rfc1912.zones/rfc1912.zones_$(date +%Y%m%d_%H%M).bak" &>> "$LOG_FILE"
 
     #
-    local -n _zonearr
+    local -a _zonearr
     zone_list_reload _zonearr
+    echo "debug : ${_zonearr[@]}"
     for _zone in "${_zonearr[@]}"; do
         delete_zone_declaration "$_zone"
-        if [[ "$_zone"== *in-addr.arpa ]]; then # 역방향
+        if [[ "$_zone" == *in-addr.arpa ]]; then # 역방향
             local _network=${_zone//.in-addr.arpa/} 
             cat << EOF >> /etc/named.rfc1912.zones
 
 zone "${_zone}" IN {
-        type slave;
+        type master;
         file "${_network}.rev";
         allow-update { none; };
         allow-transfer { ${_slaveip}; };
@@ -154,15 +153,16 @@ EOF
             cat << EOF >> /etc/named.rfc1912.zones
 
 zone "${_zone}" IN {
-        type slave;
+        type master;
         file "${_zone}.zone";
         allow-update { none; };
         allow-transfer { ${_slaveip}; };
         also-notify { ${_slaveip}; };
 };
 EOF
-        fi 
+        fi
     done
+    echo "${_slaveip} 등록이 완료되었습니다."
 }
 
 
