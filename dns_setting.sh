@@ -6,16 +6,19 @@ set_dns() {
     do
         echo "==============================================="
         echo "1. slave 서버 등록"
-        echo "2. 현재 서버를 slave 서버로 등록"
+        echo "2. 현재 서버를 slave 서버로 전환"
         echo "3. named.conf 수정"
         echo "q. 이전 메뉴 복귀" 
         echo "==============================================="
         read -p "원하는 작업을 선택하세요: " _input
         case $_input in
             1)
-                
+                register_slave
                 ;;
             2)
+                change_slave
+                ;;
+            3)
                 while :
                 do
                     echo "============================================"
@@ -36,6 +39,7 @@ set_dns() {
                 echo "잘못된 입력입니다. 다시 시도해주세요."
                 ;;
         esac
+    done
 }
 
 update_named_conf() {
@@ -47,15 +51,15 @@ update_named_conf() {
     case $_input in
         1)
             read -p "listen-on 값 입력 (예: any | 127.0.0.1) : " _listenonip
-            sed -i "s/listen-on port 53 { .* };/listen-on port 53 { ${ _listenonip }; };/" "/etc/named.conf"
+            sed -i "s/listen-on port 53 { .* };/listen-on port 53 { ${_listenonip}; };/" "/etc/named.conf"
             ;;
         2)
             read -p "listen-on-v6 값 입력 (예: none | [::1]) : " _listenonip
-            sed -i "s/listen-on-v6 port 53 { .* };/listen-on-v6 port 53 { ${ _listenonip }; };/" "/etc/named.conf" 
+            sed -i "s/listen-on-v6 port 53 { .* };/listen-on-v6 port 53 { ${_listenonip}; };/" "/etc/named.conf" 
             ;;
         3)
             read -p "allow-query 값 입력 : " _allowquery
-            sed -i "s/allow-query { .* };/allow-query { ${ _allowquery }; };/" "/etc/named.conf" 
+            sed -i "s/allow-query { .* };/allow-query { ${_allowquery}; };/" "/etc/named.conf" 
             ;;
         *)  
             echo "잘못된 입력입니다. 다시 시도해주세요."
@@ -76,7 +80,7 @@ change_slave() {
     done
 
     local _slaveip=$(hostname -I | awk '{print $1}')
-    sed -i "s/listen-on port 53 { .* };/listen-on port 53 { ${ _slaveip }; };/" "/etc/named.conf"
+    sed -i "s/listen-on port 53 { .* };/listen-on port 53 { ${_slaveip}; };/" "/etc/named.conf"
 
     # 백업
     mkdir -p "$backuppath/rfc1912.zones/" &>> "$LOG_FILE"
@@ -89,7 +93,8 @@ change_slave() {
     local -n _zonearr
     zone_list_reload _zonearr
     for _zone in "${_zonearr[@]}"; do
-        if [[ "$_zone"== *in-addr.arpa ]]; then # 역방향
+        delete_zone_declaration "$_zone"
+        if [[ "$_zone" == *in-addr.arpa ]]; then # 역방향
             local _network=${_zone//.in-addr.arpa/}
             cat << EOF >> /etc/named.rfc1912.zones
 
@@ -122,7 +127,7 @@ register_slave() {
     done
     
     local _masterip=$(hostname -I | awk '{print $1}')
-    sed -i "s/listen-on port 53 { .* };/listen-on port 53 { ${ _masterip }; };/" "/etc/named.conf"
+    sed -i "s/listen-on port 53 { .* };/listen-on port 53 { ${_masterip}; };/" "/etc/named.conf"
 
     # 백업
     mkdir -p "$backuppath/rfc1912.zones/" &>> "$LOG_FILE"

@@ -16,6 +16,7 @@ DNS_IP=$(hostname -I | awk '{print $1}')  # 여러 개의 ip 주소가 할당되
 
 source "$SCRIPT_DIR/dns_crud.sh"
 source "$SCRIPT_DIR/zone_manager.sh"
+source "$SCRIPT_DIR/dns_setting.sh"
 
 if [ ! -f "$LOG_FILE" ]; then   # -f : 파일이 존재하고 일반 파일인지 확인하는 Bash 내장 명령어, exit code 0이 참
     # 로그 파일이 없으면 빈 텍스트 파일을 새로 만듭니다.
@@ -52,7 +53,7 @@ do
                 delete_named    # named 서비스 삭제 함수
                 ;;
             3)  
-                echo "미구현 항목입니다."
+                set_dns
                 ;;
             4)
                 manage_zone
