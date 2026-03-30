@@ -1,6 +1,10 @@
 #!/bin/bash
-# 해당 스크립트는 레드햇 계열 리눅스에서만 사용이 가능
-clear 
+# ============================================================
+# install_named() : BIND 설치 (dns_crud.sh)
+# delete_named()  : BIND 삭제 (dns_crud.sh)
+# manage_zone()   : Zone 관리 메뉴 진입 (zone_manager.sh)
+# ============================================================
+clear
 
 # 로그 파일 (있으면 가져오고, 없으면 생성)
 # dirname : 파일의 경로만 가져옴
@@ -12,6 +16,7 @@ DNS_IP=$(hostname -I | awk '{print $1}')  # 여러 개의 ip 주소가 할당되
 
 source "$SCRIPT_DIR/dns_crud.sh"
 source "$SCRIPT_DIR/zone_manager.sh"
+source "$SCRIPT_DIR/dns_setting.sh"
 
 if [ ! -f "$LOG_FILE" ]; then   # -f : 파일이 존재하고 일반 파일인지 확인하는 Bash 내장 명령어, exit code 0이 참
     # 로그 파일이 없으면 빈 텍스트 파일을 새로 만듭니다.
@@ -32,15 +37,14 @@ do
     echo "==============================================="
     echo "1. DNS 서비스 설치"
     echo "2. DNS 삭제"
-    echo "3. DNS 설정 (미구현)"
+    echo "3. DNS 설정"
     echo "4. Zone 관리"
     echo "5. 방화벽 포트 관리 (미구현)"
     echo "q. 종료" 
     echo "==============================================="
     read -p "원하는 작업을 선택하세요: " INPUT
     if [ -n "$BIND_VERSION" ]; then     # DNS 서버 설치
-        if [ "$INPUT" == "q" ]; then exit 0
-        fi
+        if [ "$INPUT" == "q" ]; then exit 0; fi
         case $INPUT in
             1)
                 echo "DNS 서비스가 설치 되어있습니다. 삭제 후 다시 시도해주세요."
@@ -48,8 +52,8 @@ do
             2)
                 delete_named    # named 서비스 삭제 함수
                 ;;
-            3|5)
-                echo "미구현 항목입니다."
+            3)  
+                set_dns
                 ;;
             4)
                 manage_zone
@@ -78,3 +82,12 @@ done
 
 
 
+# 슬레이브 변경
+# 존 파일 수정 (refresh, retry, expire, minimum)
+# 환경설정 - named.conf 설정, listen-on port v6, allow-query, 슬레이브 서버 지정
+# named.conf : listen-on, allow-query 수정
+# Slave 서버 rfc1912.zones 수정
+# 자동으로 추가할 순 없을까?
+# 안되면 정방향 도메인 연속입력, 역방향 네트워크 연속입력으로 처리
+# 슬레이브 서버 지정
+# ip를 입력한 후 zone 파일 리스트를 보여주고 연속으로 입력하면 (숫자로도 가능) 자동으로 기본값으로 추가하는 형식

@@ -1,8 +1,14 @@
 #!/bin/bash
+# ============================================================
+# install_named() : BIND 패키지 설치 및 named.conf/resolv.conf/방화벽/SELinux 초기 설정
+# delete_named()  : 사용자 확인 후 DNS 서비스 제거, 설정 파일 백업, 방화벽 포트 해제
+# ============================================================
+
 ## named 서비스 설치
 install_named(){
     # bind, bind-chroot, bind-utils 설치
     echo "DNS 구축을 위한 패키지를 설치합니다. (bind, bind-chroot, bind-utils)"
+    # TODO: yum install 실패 시 에러 처리 추가 (exit code 확인)
     yum install -y bind bind-chroot bind-utils &>> $LOG_FILE
 
     # resolv.conf 서버 ip로 수정
@@ -16,6 +22,7 @@ EOF
     # named.conf 초기화 (/etc/named.conf)
     # 공백 무관하게 치환하기 위해서 \s* 사용 -> 어차피 새로 설치 했기 때문에 공백 상관 없음 (allow query만 적용)
     echo "named.conf 설정 파일을 수정합니다."
+    # TODO: 각 sed 명령어 실패 시 에러 처리 추가 (패턴 불일치 시 무음 실패)
     sed -i 's/listen-on port 53 { 127.0.0.1; };/listen-on port 53 { any; };/' /etc/named.conf &>> $LOG_FILE
     sed -i 's/listen-on-v6 port 53 { ::1; };/listen-on-v6 port 53 { none; };/' /etc/named.conf &>> $LOG_FILE
     sed -i 's/allow-query\s*{\s*localhost;\s*};/allow-query { any; };/' /etc/named.conf &>> $LOG_FILE
@@ -49,13 +56,13 @@ EOF
 
 ## named 서비스 삭제
 delete_named(){
-    local logfile=$LOG_FILE
-    local isdelete  # DNS 서비스 삭제 여부
-    local isdeleterelated   # 관련 파일 삭제 여부
+    local _logfile=$LOG_FILE
+    local _isdelete  # DNS 서비스 삭제 여부
+    local _isdeleterelated   # 관련 파일 삭제 여부
     while :
     do
-        read -p "DNS 서비스를 삭제하시겠습니까? (y/n) : " isdelete
-        case $isdelete in
+        read -p "DNS 서비스를 삭제하시겠습니까? (y/n) : " _isdelete
+        case $_isdelete in
             y) 
                 echo "DNS 서비스 삭제를 진행합니다."
                 break 
@@ -73,16 +80,16 @@ delete_named(){
     do
         echo "서비스 관련 디렉토리, 설정 파일, zone 파일을 삭제하시겠습니까? (y/n)"
         echo "삭제 대상 : /etc/named*, /var/named/, /var/named/chroot/"
-        read isdeleterelated
-        case $isdeleterelated in
+        read _isdeleterelated
+        case $_isdeleterelated in
             y)
                 # 백업 진행
                 echo "서비스 관련 디렉토리, 설정 파일, zone 파일을 삭제하기 전에 백업을 진행합니다."
-                local backuppath="$SCRIPT_DIR/dns_backup_$(date +%Y%m%d)"
-                mkdir -p "$backuppath" &>> $LOG_FILE
-                echo "백업 위치: $backuppath"
-                cp -a /etc/named* "$backuppath/" &>> $LOG_FILE
-                cp -a /var/named/ "$backuppath/named" &>> $LOG_FILE
+                local _backuppath="$SCRIPT_DIR/dns_backup_$(date +%Y%m%d)"
+                mkdir -p "$_backuppath" &>> $LOG_FILE
+                echo "백업 위치: $_backuppath"
+                cp -a /etc/named* "$_backuppath/" &>> $LOG_FILE
+                cp -a /var/named/ "$_backuppath/named" &>> $LOG_FILE
                 
                 echo "서비스 관련 디렉토리, 설정 파일, zone 파일을 삭제합니다."
                 rm -rf /etc/named* &>> $LOG_FILE  # /etc 폴더 안의 모든 설정 파일 제거
