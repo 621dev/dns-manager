@@ -79,6 +79,23 @@ change_slave() {
         if check_ip "$_masterip"; then break; fi
     done
 
+    # 마스터 서버로부터 named.rfc1912.zones 파일 가져오기
+    local _remotepath
+    while :
+    do
+        read -p "마스터 서버의 named.rfc1912.zones 파일 경로를 입력해주세요 (기본값: /etc/named.rfc1912.zones, q. 이전 메뉴 복귀) : " _remotepath
+        if [ "$_remotepath" == "q" ]; then return 0; fi
+        if [ ! -n "$_remotepath" ]; then _remotepath="/etc/named.rfc1912.zones"; fi
+
+        echo "마스터 서버(${_masterip})에서 파일을 가져오는 중..."
+        if ssh "root@${_masterip}" "cat ${_remotepath}" > "/etc/named.rfc1912.zones" 2>> "$LOG_FILE"; then
+            echo "파일 수신 완료: ${_masterip}:${_remotepath} → /etc/named.rfc1912.zones"
+            break
+        else
+            echo "파일 수신 실패. 경로를 다시 확인해주세요."
+        fi
+    done
+
     sed -i "s/listen-on port 53 { .* };/listen-on port 53 { ${DNS_IP}; };/" "/etc/named.conf"
 
     # 백업
