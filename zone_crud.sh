@@ -194,7 +194,7 @@ EOF
 
 ; PTR 레코드
 EOF
-            printf "%-7s IN PTR    %s\n." "$_hostoctet" "$_inputservice.$_inputdomain." >> "/var/named/${_reverseip}.rev"
+            printf "%-7s IN PTR    %s\n" "$_hostoctet" "$_inputservice.$_inputdomain." >> "/var/named/${_reverseip}.rev"
             # zone 파일 소유자 및 그룹 권한 설정
             echo "${_reverseip}의 zone 파일 소유자 및 그룹 권한을 설정합니다."
             chown root:named /var/named/${_reverseip}.rev
