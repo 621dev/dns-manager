@@ -65,7 +65,7 @@ is_named_running() {
 ## 현재 서버가 마스터인지 슬레이브인지 판단
 # named-checkconf -p 로 파싱된 전체 설정에서 type 선언을 읽음
 # 반환값: "master" | "slave"
-get_dns_role() {
+get_dns_type() {
     local _mastercount=0
     local _slavecount=0
 
@@ -78,6 +78,7 @@ get_dns_role() {
         echo "master"
     elif (( _mastercount == 0 )); then
         echo "slave"
+    fi
 }
 
 ## named 서비스 삭제

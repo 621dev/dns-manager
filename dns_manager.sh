@@ -13,6 +13,7 @@ clear
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 LOG_FILE="$SCRIPT_DIR/dns_manager.log"  # 로그파일 경로, 이 스크립트에서 함수가 호출된 모든 스크립트가 사용이 가능하다. 
 DNS_IP=$(hostname -I | awk '{print $1}')  # 여러 개의 ip 주소가 할당되있을 경우를 고려하여 첫번째 IP만 가져옴
+DNS_TYPE="none"
 
 source "$SCRIPT_DIR/dns_crud.sh"
 source "$SCRIPT_DIR/zone_manager.sh"
@@ -39,13 +40,12 @@ do
             echo "서비스 상태 : 중지됨"
         fi
 
-        # 마스터/슬레이브 역할
-        _DNS_ROLE=$(get_dns_role)
-        case $_DNS_ROLE in
-            master) echo "서버 역할   : Master" ;;
-            slave)  echo "서버 역할   : Slave"  ;;
-            mixed)  echo "서버 역할   : Mixed (Master + Slave 혼재)" ;;
-            none)   echo "서버 역할   : Zone 없음" ;;
+        # 마스터/슬레이브 타입
+        DNS_TYPE=$(get_dns_type)
+        case $DNS_TYPE in
+            master) echo "서버 타입   : Master" ;;
+            slave)  echo "서버 타입   : Slave"  ;;
+            none)   echo "서버 타입   : Zone 없음" ;;
         esac
     else
         echo "DNS 서비스 미설치"
