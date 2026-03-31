@@ -1,5 +1,6 @@
 #!/bin/bash
 # ============================================================
+# write_zone_declaration() : rfc1912.zones에 zone 선언 블록 작성 (master/slave 분기)
 # add_forward_zone()       : 정방향 Zone 선언 및 zone 파일 생성
 # add_reverse_zone()       : 역방향 Zone 선언 및 .rev 파일 생성/수정
 # domain_delete_zone()     : 도메인 기준으로 정방향 Zone 삭제
@@ -9,6 +10,51 @@
 # update_service_record()  : 정방향 Zone의 A 레코드 추가/IP 변경/삭제
 # update_ptr_record()      : 역방향 Zone의 PTR 레코드 추가/변경/삭제
 # ============================================================
+
+# rfc1912.zones에 zone 선언 블록을 추가
+# $1 : zone 이름 (예: naver.com / 10.168.192.in-addr.arpa)
+# $2 : zone 파일명 (예: naver.com.zone / 10.168.192.rev)
+# $3 : 서버 타입 ("master" | "slave")
+# $4 : 마스터 IP (slave일 때만 사용)
+# $5 : 슬레이브 IP (master이고 slave 등록 시 사용, 없으면 생략)
+write_zone_declaration() {
+    local _zone=$1
+    local _zonefile=$2
+    local _type=$3
+    local _masterip=$4
+    local _slaveip=$5
+
+    if [ "$_type" == "slave" ]; then
+        cat << EOF >> /etc/named.rfc1912.zones
+
+zone "${_zone}" IN {
+        type slave;
+        file "slaves/${_zonefile}";
+        masters { ${_masterip}; };
+};
+EOF
+    elif [ -n "$_slaveip" ]; then  # master + slave 등록
+        cat << EOF >> /etc/named.rfc1912.zones
+
+zone "${_zone}" IN {
+        type master;
+        file "${_zonefile}";
+        allow-update { none; };
+        allow-transfer { ${_slaveip}; };
+        also-notify { ${_slaveip}; };
+};
+EOF
+    else  # master 단독
+        cat << EOF >> /etc/named.rfc1912.zones
+
+zone "${_zone}" IN {
+        type master;
+        file "${_zonefile}";
+        allow-update { none; };
+};
+EOF
+    fi
+}
 
 # 정방향 도메인 추가
 # 존을 추가할 때는 zone 선언이 안되어있는데 zone 파일이 있을 경우 zone 파일을 삭제하고 새로 생성한다.

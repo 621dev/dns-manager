@@ -76,7 +76,7 @@ get_dns_type() {
         echo "none"
     elif (( _slavecount == 0 )); then
         echo "master"
-    elif (( _mastercount == 0 )); then
+    elif (( _slavecount > 0 )); then
         echo "slave"
     fi
 }
