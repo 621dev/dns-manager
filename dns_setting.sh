@@ -28,7 +28,7 @@ set_dns() {
                     echo "q. 이전 메뉴 복귀"
                     echo "============================================"
                     read -p "원하는 작업을 선택하세요 : " _input
-                    if [ "$_input" == "q" ]; then continue; fi
+                    if [ "$_input" == "q" ]; then break; fi
                     update_named_conf "$_input"
                 done
                 ;;
@@ -99,8 +99,9 @@ change_slave() {
     sed -i "s/listen-on port 53 { .* };/listen-on port 53 { ${DNS_IP}; };/" "/etc/named.conf"
 
     # 백업
-    mkdir -p "$backuppath/rfc1912.zones/" &>> "$LOG_FILE"
-    cp "/etc/named.rfc1912.zones" "$backuppath/rfc1912.zones/rfc1912.zones_$(date +%Y%m%d_%H%M).bak" &>> "$LOG_FILE"
+    local _backuppath="$SCRIPT_DIR/dns_backup_$(date +%Y%m%d)"
+    mkdir -p "$_backuppath/rfc1912.zones/" &>> "$LOG_FILE"
+    cp "/etc/named.rfc1912.zones" "$_backuppath/rfc1912.zones/rfc1912.zones_$(date +%Y%m%d_%H%M).bak" &>> "$LOG_FILE"
 
     # slave zone 선언 추가
     # 직접 입력
@@ -145,8 +146,9 @@ register_slave() {
     sed -i "s/listen-on port 53 { .* };/listen-on port 53 { ${DNS_IP}; };/" "/etc/named.conf"
 
     # 백업
-    mkdir -p "$backuppath/rfc1912.zones/" &>> "$LOG_FILE"
-    cp "/etc/named.rfc1912.zones" "$backuppath/rfc1912.zones/rfc1912.zones_$(date +%Y%m%d_%H%M).bak" &>> "$LOG_FILE"
+    local _backuppath="$SCRIPT_DIR/dns_backup_$(date +%Y%m%d)"
+    mkdir -p "$_backuppath/rfc1912.zones/" &>> "$LOG_FILE"
+    cp "/etc/named.rfc1912.zones" "$_backuppath/rfc1912.zones/rfc1912.zones_$(date +%Y%m%d_%H%M).bak" &>> "$LOG_FILE"
 
     #
     local -a _zonearr

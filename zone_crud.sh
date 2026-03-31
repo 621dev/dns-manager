@@ -337,8 +337,9 @@ delete_zone_declaration() {
     fi
 
     # 백업
-    mkdir -p "$backuppath/rfc1912.zones/" &>> "$LOG_FILE"
-    cp "/etc/named.rfc1912.zones" "$backuppath/rfc1912.zones/rfc1912.zones_$(date +%Y%m%d_%H%M).bak" &>> "$LOG_FILE"
+    local _backuppath="$SCRIPT_DIR/dns_backup_$(date +%Y%m%d)"
+    mkdir -p "$_backuppath/rfc1912.zones/" &>> "$LOG_FILE"
+    cp "/etc/named.rfc1912.zones" "$_backuppath/rfc1912.zones/rfc1912.zones_$(date +%Y%m%d_%H%M).bak" &>> "$LOG_FILE"
 
     # 삭제
     sed -i "${_startline},${_endline}d" /etc/named.rfc1912.zones
@@ -430,7 +431,7 @@ add_reverse_host() {
     update_serial "$_revfile"
     
     # 서비스 추가
-    printf "%-7s IN PTR    %s\n." "$_hostip" "$_domain" >> "$_revfile"
+    printf "%-7s IN PTR    %s\n" "$_hostip" "$_domain" >> "$_revfile"
     echo "${_hostip}가 추가되었습니다."
     rndc reload
 }

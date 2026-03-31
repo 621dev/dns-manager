@@ -31,6 +31,22 @@ do
     echo "==============================================="
     if [ -n "$BIND_VERSION" ]; then   # -n : 문자열의 길이가 0보다 크면 참
         echo "DNS 서비스 설치됨 ($BIND_VERSION)"
+
+        # 실행 여부
+        if is_named_running; then
+            echo "서비스 상태 : 실행 중"
+        else
+            echo "서비스 상태 : 중지됨"
+        fi
+
+        # 마스터/슬레이브 역할
+        _DNS_ROLE=$(get_dns_role)
+        case $_DNS_ROLE in
+            master) echo "서버 역할   : Master" ;;
+            slave)  echo "서버 역할   : Slave"  ;;
+            mixed)  echo "서버 역할   : Mixed (Master + Slave 혼재)" ;;
+            none)   echo "서버 역할   : Zone 없음" ;;
+        esac
     else
         echo "DNS 서비스 미설치"
     fi

@@ -28,7 +28,6 @@ EOF
     sed -i 's/allow-query\s*{\s*localhost;\s*};/allow-query { any; };/' /etc/named.conf &>> $LOG_FILE
     
     # 방화벽을 on / off 체크하고 포트를 추가
-    echo "방화벽에 53번 포트가 열려 있는지 확인합니다."
     if firewall-cmd --state &>> $LOG_FILE; then
         echo "방화벽이 켜져 있습니다. 53번 포트를 확인합니다."
         # 방화벽 포트 추가 (53/tcp, 53/udp)
@@ -52,6 +51,33 @@ EOF
     fi
 
     echo "DNS가 설치되었습니다."
+}
+
+## named 서비스 실행 여부 확인 (0: 실행 중, 1: 중지됨)
+is_named_running() {
+    if systemctl is-active --quiet named; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+## 현재 서버가 마스터인지 슬레이브인지 판단
+# named-checkconf -p 로 파싱된 전체 설정에서 type 선언을 읽음
+# 반환값: "master" | "slave"
+get_dns_role() {
+    local _mastercount=0
+    local _slavecount=0
+
+    _mastercount=$(named-checkconf -p 2>/dev/null | grep -cE "type\s+(master)")
+    _slavecount=$(named-checkconf -p 2>/dev/null | grep -cE "type\s+(slave)")
+
+    if (( _mastercount == 0 && _slavecount == 0 )); then
+        echo "none"
+    elif (( _slavecount == 0 )); then
+        echo "master"
+    elif (( _mastercount == 0 )); then
+        echo "slave"
 }
 
 ## named 서비스 삭제

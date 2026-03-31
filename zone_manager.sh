@@ -90,7 +90,7 @@ select_delete_zone() {
     while :   
     do
         sleep 2 && clear
-        show_zone_list "${!_refzonearr}" ${currentpage}
+        show_zone_list _refzonearr ${currentpage}
         echo "[. 다음 페이지    | ]. 이전 페이지    | :숫자. 해당 번호의 페이지로 이동"
         echo "-----------------------------------------------"
         echo :숫자. 해당 번호의 ZONE 삭제
@@ -110,7 +110,7 @@ select_delete_zone() {
                 if [ "$_inputdomain" == "0" ]; then continue
                 fi
                 domain_delete_zone "$_inputdomain"
-                zone_list_reload "${!_refzonearr}"
+                zone_list_reload _refzonearr
                 ;;
             2)
                 echo "============================================"
@@ -130,11 +130,11 @@ select_delete_zone() {
                 case "$_input" in
                     1)
                         network_delete_zone "$_inputnetwork"
-                        zone_list_reload "${!_refzonearr}"
+                        zone_list_reload _refzonearr
                         ;;
                     2)
                         hostip_delete_zone "$_inputnetwork"
-                        zone_list_reload "${!_refzonearr}"
+                        zone_list_reload _refzonearr
                         ;;
                     "q")
                         continue
@@ -274,7 +274,7 @@ select_update_zone() {
                             while :
                             do
                                 echo "============================================"
-                                echo "삭제할 호스트 IP를 입력해주세요 (현재 입력한 네트워크 : $_network)"
+                                echo "삭제할 호스트 IP를 입력해주세요 (현재 입력한 네트워크 : $_inputnetwork)"
                                 echo "전체 IP의 마지막 부분만 입력해야합니다. 예 : 192.168.10.125의 125 부분"
                                 echo "q. 이전 메뉴 복귀"
                                 echo "============================================"
@@ -350,6 +350,7 @@ split_dot() {
 
 zone_list_reload() {
     local -n _refarr=$1  # nameref - 참조로 받음
+    _refarr=()
     local -a _default_zones=(
         "localhost.localdomain"
         "localhost"
@@ -405,5 +406,5 @@ update_serial() {
     local _zonefile=$1
     local _serial=$(awk '/serial/ {print $1}' "$_zonefile")
     local _newserial=$((_serial + 1))
-    sed -i "s/${_serial}/${_newserial}/" "$_zonefile"
+    sed -i "/serial/{s/${_serial}/${_newserial}/}" "$_zonefile"
 }
