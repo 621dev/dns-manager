@@ -28,7 +28,6 @@ EOF
     sed -i 's/allow-query\s*{\s*localhost;\s*};/allow-query { any; };/' /etc/named.conf &>> $LOG_FILE
     
     # 방화벽을 on / off 체크하고 포트를 추가
-    echo "방화벽에 53번 포트가 열려 있는지 확인합니다."
     if firewall-cmd --state &>> $LOG_FILE; then
         echo "방화벽이 켜져 있습니다. 53번 포트를 확인합니다."
         # 방화벽 포트 추가 (53/tcp, 53/udp)
@@ -51,7 +50,30 @@ EOF
         echo "SELinux가 Enforcing 상태가 아닙니다."
     fi
 
+    # DNS에 대한 데이터
+    echo "DNS 서버에 대한 데이터를 초기화합니다."
+    cat << EOF > "${SCRIPT_DIR}/dns_data.txt"
+MASTER_IP:${DNS_IP}
+SLAVE_IP:
+TYPE:none
+EOF
     echo "DNS가 설치되었습니다."
+}
+
+## named 서비스 실행 여부 확인
+is_named_running() {
+    if systemctl is-active --quiet named; then
+        echo "true"
+    else
+        echo "false"
+    fi
+}
+
+## 현재 서버가 마스터인지 슬레이브인지 판단
+# named-checkconf -p 로 파싱된 전체 설정에서 type 선언을 읽음
+# 반환값: "master" | "slave"
+get_dns_type() {
+    echo $(grep "TYPE" "${SCRIPT_DIR}/dns_data.txt" | awk -F':' '{print $2}')
 }
 
 ## named 서비스 삭제

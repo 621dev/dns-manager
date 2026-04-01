@@ -1,5 +1,6 @@
 #!/bin/bash
 # ============================================================
+# write_zone_declaration() : rfc1912.zones에 zone 선언 블록 작성 (master/slave 분기)
 # add_forward_zone()       : 정방향 Zone 선언 및 zone 파일 생성
 # add_reverse_zone()       : 역방향 Zone 선언 및 .rev 파일 생성/수정
 # domain_delete_zone()     : 도메인 기준으로 정방향 Zone 삭제
@@ -70,14 +71,7 @@ add_forward_zone() {
 
         # rfc1912.zones 파일에 선언 추가
         echo "도메인 ${_inputdomain}을 추가합니다."
-        cat << EOF >> /etc/named.rfc1912.zones
-
-zone "${_inputdomain}" IN {
-        type master;
-        file "${_inputdomain}.zone";
-        allow-update {none;};
-};
-EOF
+        create_zone_declaration "${_inputdomain}" "${_inputdomain}.zone"
         # zone 파일 생성
         echo "${_inputdomain}의 Zone 파일을 생성합니다."
         cat << EOF > /var/named/${_inputdomain}.zone
@@ -141,14 +135,7 @@ add_reverse_zone() {
 
             # rfc1912.zones 파일에 선언 추가
             echo "rfc1912.zones에 ${_reverseip} 대역대를 선언합니다."
-            cat << EOF >> /etc/named.rfc1912.zones
-
-zone "${_reverseip}.in-addr.arpa" IN {
-        type master;
-        file "${_reverseip}.rev";
-        allow-update { none; };
-};
-EOF
+            create_zone_declaration "${_reverseip}.in-addr.arpa" "${_reverseip}.rev"
         fi
 
         while :
@@ -318,6 +305,46 @@ hostip_delete_zone() {
     done
 }
 
+# rfc1912.zones에 zone 선언 블록을 추가
+create_zone_declaration() {
+    local _zone=$1
+    local _zonefile=$2
+    local _type=$(get_dns_type)
+    local _masterip=$(grep "MASTER_IP" "${SCRIPT_DIR}/dns_data.txt" | awk -F':' '{print $2}')
+    local _slaveip=$(grep "SLAVE_IP" "${SCRIPT_DIR}/dns_data.txt" | awk -F':' '{print $2}')
+
+    if [[ "$_type" == "master" ]]; then
+        cat << EOF >> /etc/named.rfc1912.zones
+
+zone "${_zone}" IN {
+        type master;
+        file "${_zonefile}";
+        allow-update { none; };
+        allow-transfer { ${_slaveip}; };
+        also-notify { ${_slaveip}; };
+};
+EOF
+    elif [[ "$_type" == "none" ]]; then  # master + slave 등록
+        cat << EOF >> /etc/named.rfc1912.zones
+
+zone "${_zone}" IN {
+        type master;
+        file "${_zonefile}";
+        allow-update {none;};
+};
+EOF
+    elif [[ "$_type" == "slave" ]]; then
+        cat << EOF >> /etc/named.rfc1912.zones
+
+zone "${_zone}" IN {
+        type slave;
+        file "slaves/${_zonefile}";
+        masters { ${_masterip}; };
+};
+EOF
+    fi
+}
+
 # 존 선언 삭제 ($1 : 삭제할 도메인 / 네트워크 IP (in-addr.arpa 포함))
 delete_zone_declaration() {
     local _target=$1
@@ -337,8 +364,9 @@ delete_zone_declaration() {
     fi
 
     # 백업
-    mkdir -p "$backuppath/rfc1912.zones/" &>> "$LOG_FILE"
-    cp "/etc/named.rfc1912.zones" "$backuppath/rfc1912.zones/rfc1912.zones_$(date +%Y%m%d_%H%M).bak" &>> "$LOG_FILE"
+    local _backuppath="$SCRIPT_DIR/dns_backup_$(date +%Y%m%d)"
+    mkdir -p "$_backuppath/rfc1912.zones/" &>> "$LOG_FILE"
+    cp "/etc/named.rfc1912.zones" "$_backuppath/rfc1912.zones/rfc1912.zones_$(date +%Y%m%d_%H%M).bak" &>> "$LOG_FILE"
 
     # 삭제
     sed -i "${_startline},${_endline}d" /etc/named.rfc1912.zones
@@ -430,7 +458,7 @@ add_reverse_host() {
     update_serial "$_revfile"
     
     # 서비스 추가
-    printf "%-7s IN PTR    %s\n." "$_hostip" "$_domain" >> "$_revfile"
+    printf "%-7s IN PTR    %s\n" "$_hostip" "$_domain" >> "$_revfile"
     echo "${_hostip}가 추가되었습니다."
     rndc reload
 }
