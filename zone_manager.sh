@@ -380,10 +380,10 @@ zone_list_reload() {
 
 # Zone 조회
 show_zone_list(){
-    local -n _refzonearr=$1
+    local -n _szl_refzonearr=$1
     local _currentpage=${2:-0}
     local _maxzonecount=7 # 최대 표시할 zone 수
-    local _zonetotal=${#_refzonearr[@]}
+    local _zonetotal=${#_szl_refzonearr[@]}
 
     local _start=$(( _currentpage * _maxzonecount ))
     local _end=$(( _start + _maxzonecount ))
@@ -394,7 +394,7 @@ show_zone_list(){
     echo "ZONE LIST"
     echo "==============================================="
     for (( i = _start; i < _end && i < _zonetotal; i++ )); do
-        echo "$((i+1)). ${_refzonearr[i]}"
+        echo "$((i+1)). ${_szl_refzonearr[i]}"
     done
     echo "==============================================="
     echo "PAGE : $((_currentpage+1)) / $((_totalpages+1)) | TOTAL ZONE COUNT : ${_zonetotal}"
