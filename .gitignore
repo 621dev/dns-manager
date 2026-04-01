@@ -3,3 +3,6 @@
 
 # 자동 생성 백업 폴더
 dns_backup_*/
+
+# 데이터 파일
+dns_data.txt
