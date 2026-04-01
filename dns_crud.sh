@@ -75,7 +75,7 @@ is_named_running() {
 # named-checkconf -p 로 파싱된 전체 설정에서 type 선언을 읽음
 # 반환값: "master" | "slave"
 get_dns_type() {
-    echo $(grep "TYPE" "${SCRIPT_DIR}/dns_data.txt" | awk -F':' '{print $2}')
+    echo $(awk -F':' '/TYPE/ {print $2}' "${SCRIPT_DIR}/dns_data.txt")
 }
 
 ## named 서비스 삭제
