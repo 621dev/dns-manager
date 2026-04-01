@@ -71,14 +71,7 @@ add_forward_zone() {
 
         # rfc1912.zones 파일에 선언 추가
         echo "도메인 ${_inputdomain}을 추가합니다."
-        cat << EOF >> /etc/named.rfc1912.zones
-
-zone "${_inputdomain}" IN {
-        type master;
-        file "${_inputdomain}.zone";
-        allow-update {none;};
-};
-EOF
+        create_zone_declaration "${_inputdomain}" "${_inputdomain}.zone"
         # zone 파일 생성
         echo "${_inputdomain}의 Zone 파일을 생성합니다."
         cat << EOF > /var/named/${_inputdomain}.zone
@@ -142,14 +135,7 @@ add_reverse_zone() {
 
             # rfc1912.zones 파일에 선언 추가
             echo "rfc1912.zones에 ${_reverseip} 대역대를 선언합니다."
-            cat << EOF >> /etc/named.rfc1912.zones
-
-zone "${_reverseip}.in-addr.arpa" IN {
-        type master;
-        file "${_reverseip}.rev";
-        allow-update { none; };
-};
-EOF
+            create_zone_declaration "${_reverseip}.in-addr.arpa" "${_reverseip}.rev"
         fi
 
         while :
@@ -327,16 +313,7 @@ create_zone_declaration() {
     local _masterip="${DNS_IP}"
     local _slaveip=$(grep "SLAVE_IP" "${SCRIPT_DIR}/dns_data.txt" | awk -F':' '{print $2}')
 
-    if [ "$_type" == "slave" ]; then
-        cat << EOF >> /etc/named.rfc1912.zones
-
-zone "${_zone}" IN {
-        type slave;
-        file "slaves/${_zonefile}";
-        masters { ${_masterip}; };
-};
-EOF
-    elif [ -n "$_slaveip" ]; then  # master + slave 등록
+    if [[ "$_type" == "master" ]]; then
         cat << EOF >> /etc/named.rfc1912.zones
 
 zone "${_zone}" IN {
@@ -347,13 +324,13 @@ zone "${_zone}" IN {
         also-notify { ${_slaveip}; };
 };
 EOF
-    else  # master 단독
+    elif [[ "$_type" == "none" ]]; then  # master + slave 등록
         cat << EOF >> /etc/named.rfc1912.zones
 
 zone "${_zone}" IN {
         type master;
         file "${_zonefile}";
-        allow-update { none; };
+        allow-update {none;};
 };
 EOF
     fi
