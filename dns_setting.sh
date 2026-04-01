@@ -1,5 +1,12 @@
 #!/bin/bash
-# DNS 세팅 메뉴
+# ============================================================
+# set_dns()          : DNS 설정 메뉴 (slave 등록 / slave 전환 / named.conf 수정)
+# update_named_conf(): named.conf의 listen-on, listen-on-v6 값 수정
+# change_slave()     : 현재 서버를 slave로 전환 (마스터 IP 입력, rfc1912.zones 동기화)
+# register_slave()   : slave 서버 등록 (slave IP 입력, zone 선언 재생성)
+# update_hostname()  : 서버 hostname 변경
+# reload_dns_decl()  : 마스터에서 rfc1912.zones를 가져와 slave zone 선언 갱신
+# ============================================================
 
 set_dns() {
     while :

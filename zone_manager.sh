@@ -1,13 +1,15 @@
 #!/bin/bash
 # ============================================================
-# manage_zone()    : Zone 목록을 페이지별로 출력하고 CRUD 메뉴를 처리하는 루프
-# select_add_zone()        : 정방향/역방향 Zone 추가 메뉴
-# select_delete_zone()     : Zone 삭제 메뉴 (도메인 또는 네트워크 기준)
-# select_update_zone()     : Zone 수정 메뉴
-# check_ip()       : IP 주소 형식 및 범위 유효성 검사 (4옥텟, 0~255, 선행 0 등)
-# split_dot()      : 점(.) 기준으로 문자열을 분리하여 배열 출력
-# zone_list_reload(): /etc/named.rfc1912.zones에서 zone 목록을 배열로 갱신
-# show_zone_list() : zone 배열을 페이지 단위(7개)로 출력
+# manage_zone()        : Zone 목록을 페이지별로 출력하고 CRUD 메뉴를 처리하는 루프
+# select_add_zone()    : 정방향/역방향 Zone 추가 메뉴
+# select_delete_zone() : Zone 삭제 메뉴 (도메인 또는 네트워크 기준)
+# select_update_zone() : Zone 수정 메뉴 (서비스/호스트 추가·삭제)
+# check_ip()           : IP 주소 형식 및 범위 유효성 검사 (4옥텟, 0~255, 선행 0 등)
+# split_dot()          : 점(.) 기준으로 문자열을 분리하여 배열 출력
+# zone_list_reload()   : /etc/named.rfc1912.zones에서 zone 목록을 배열로 갱신 (기본 zone 제외)
+# show_zone_list()     : zone 배열을 페이지 단위(7개)로 출력
+# update_serial()      : zone 파일의 serial 번호를 1 증가
+# update_decl_serial() : dns_data.txt의 ZONE_DECL_SERIAL 값을 1 증가
 # ============================================================
 
 source "$SCRIPT_DIR/zone_crud.sh"

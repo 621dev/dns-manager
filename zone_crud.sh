@@ -1,13 +1,16 @@
 #!/bin/bash
 # ============================================================
-# add_forward_zone()       : 정방향 Zone 선언 및 zone 파일 생성
-# add_reverse_zone()       : 역방향 Zone 선언 및 .rev 파일 생성/수정
-# domain_delete_zone()     : 도메인 기준으로 정방향 Zone 삭제
-# network_delete_zone()    : 네트워크 대역 기준으로 역방향 Zone 전체 삭제
-# hostip_delete_zone()     : 역방향 Zone에서 특정 호스트 IP 레코드만 삭제
-# delete_zone_declaration(): rfc1912.zones에서 zone 선언 블록 삭제
-# update_service_record()  : 정방향 Zone의 A 레코드 추가/IP 변경/삭제
-# update_ptr_record()      : 역방향 Zone의 PTR 레코드 추가/변경/삭제
+# add_forward_zone()        : 정방향 Zone 선언 및 zone 파일 생성
+# add_reverse_zone()        : 역방향 Zone 선언 및 .rev 파일 생성/수정
+# domain_delete_zone()      : 도메인 기준으로 정방향 Zone 삭제
+# network_delete_zone()     : 네트워크 대역 기준으로 역방향 Zone 전체 삭제
+# hostip_delete_zone()      : 역방향 Zone에서 특정 호스트 IP 레코드만 삭제
+# create_zone_declaration() : rfc1912.zones에 zone 선언 블록 추가 (master/slave 자동 분기)
+# delete_zone_declaration() : rfc1912.zones에서 zone 선언 블록 삭제
+# add_forward_service()     : 정방향 Zone에 A 레코드 추가
+# delete_forward_service()  : 정방향 Zone에서 A 레코드 삭제
+# add_reverse_host()        : 역방향 Zone에 PTR 레코드 추가
+# delete_reverse_host()     : 역방향 Zone에서 PTR 레코드 삭제
 # ============================================================
 
 # 정방향 도메인 추가
