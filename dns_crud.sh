@@ -50,15 +50,21 @@ EOF
         echo "SELinux가 Enforcing 상태가 아닙니다."
     fi
 
+    # DNS에 대한 데이터
+    echo "DNS 서버에 대한 데이터를 초기화합니다."
+    cat << EOF > "${SCRIPT_DIR}/dns_data.txt"
+SLAVE_IP:
+TYPE:none
+EOF
     echo "DNS가 설치되었습니다."
 }
 
-## named 서비스 실행 여부 확인 (0: 실행 중, 1: 중지됨)
+## named 서비스 실행 여부 확인
 is_named_running() {
     if systemctl is-active --quiet named; then
-        return 0
+        echo "true"
     else
-        return 1
+        echo "false"
     fi
 }
 
@@ -66,19 +72,7 @@ is_named_running() {
 # named-checkconf -p 로 파싱된 전체 설정에서 type 선언을 읽음
 # 반환값: "master" | "slave"
 get_dns_type() {
-    local _mastercount=0
-    local _slavecount=0
-
-    _mastercount=$(named-checkconf -p 2>/dev/null | grep -cE "type\s+(master)")
-    _slavecount=$(named-checkconf -p 2>/dev/null | grep -cE "type\s+(slave)")
-
-    if (( _mastercount == 0 && _slavecount == 0 )); then
-        echo "none"
-    elif (( _slavecount == 0 )); then
-        echo "master"
-    elif (( _slavecount > 0 )); then
-        echo "slave"
-    fi
+    echo $(grep "TYPE" "${SCRIPT_DIR}/dns_data.txt" | awk -F':' '{print $2}')
 }
 
 ## named 서비스 삭제

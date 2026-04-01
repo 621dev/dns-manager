@@ -11,51 +11,6 @@
 # update_ptr_record()      : 역방향 Zone의 PTR 레코드 추가/변경/삭제
 # ============================================================
 
-# rfc1912.zones에 zone 선언 블록을 추가
-# $1 : zone 이름 (예: naver.com / 10.168.192.in-addr.arpa)
-# $2 : zone 파일명 (예: naver.com.zone / 10.168.192.rev)
-# $3 : 서버 타입 ("master" | "slave")
-# $4 : 마스터 IP (slave일 때만 사용)
-# $5 : 슬레이브 IP (master이고 slave 등록 시 사용, 없으면 생략)
-write_zone_declaration() {
-    local _zone=$1
-    local _zonefile=$2
-    local _type=$3
-    local _masterip=$4
-    local _slaveip=$5
-
-    if [ "$_type" == "slave" ]; then
-        cat << EOF >> /etc/named.rfc1912.zones
-
-zone "${_zone}" IN {
-        type slave;
-        file "slaves/${_zonefile}";
-        masters { ${_masterip}; };
-};
-EOF
-    elif [ -n "$_slaveip" ]; then  # master + slave 등록
-        cat << EOF >> /etc/named.rfc1912.zones
-
-zone "${_zone}" IN {
-        type master;
-        file "${_zonefile}";
-        allow-update { none; };
-        allow-transfer { ${_slaveip}; };
-        also-notify { ${_slaveip}; };
-};
-EOF
-    else  # master 단독
-        cat << EOF >> /etc/named.rfc1912.zones
-
-zone "${_zone}" IN {
-        type master;
-        file "${_zonefile}";
-        allow-update { none; };
-};
-EOF
-    fi
-}
-
 # 정방향 도메인 추가
 # 존을 추가할 때는 zone 선언이 안되어있는데 zone 파일이 있을 경우 zone 파일을 삭제하고 새로 생성한다.
 add_forward_zone() {
@@ -362,6 +317,46 @@ hostip_delete_zone() {
         echo "${_inputnetwork}.${_inputhost} 호스트가 삭제되었습니다."
         rndc reload
     done
+}
+
+# rfc1912.zones에 zone 선언 블록을 추가
+create_zone_declaration() {
+    local _zone=$1
+    local _zonefile=$2
+    local _type=$(get_dns_type)
+    local _masterip="${DNS_IP}"
+    local _slaveip=$(grep "SLAVE_IP" "${SCRIPT_DIR}/dns_data.txt" | awk -F':' '{print $2}')
+
+    if [ "$_type" == "slave" ]; then
+        cat << EOF >> /etc/named.rfc1912.zones
+
+zone "${_zone}" IN {
+        type slave;
+        file "slaves/${_zonefile}";
+        masters { ${_masterip}; };
+};
+EOF
+    elif [ -n "$_slaveip" ]; then  # master + slave 등록
+        cat << EOF >> /etc/named.rfc1912.zones
+
+zone "${_zone}" IN {
+        type master;
+        file "${_zonefile}";
+        allow-update { none; };
+        allow-transfer { ${_slaveip}; };
+        also-notify { ${_slaveip}; };
+};
+EOF
+    else  # master 단독
+        cat << EOF >> /etc/named.rfc1912.zones
+
+zone "${_zone}" IN {
+        type master;
+        file "${_zonefile}";
+        allow-update { none; };
+};
+EOF
+    fi
 }
 
 # 존 선언 삭제 ($1 : 삭제할 도메인 / 네트워크 IP (in-addr.arpa 포함))

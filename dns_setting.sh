@@ -130,8 +130,9 @@ zone "${_zone}" IN {
         masters { ${_masterip}; };
 };
 EOF
-        fi 
+        fi        
     done
+    sed -i "s/^TYPE:.*/TYPE:slave/" "${SCRIPT_DIR}/dns_data.txt"
 }
 
 register_slave() {
@@ -181,6 +182,9 @@ zone "${_zone}" IN {
 EOF
         fi
     done
+
+    sed -i "s/^SLAVE_IP:.*/SLAVE_IP:${_slaveip}/" "${SCRIPT_DIR}/dns_data.txt"
+    sed -i "s/^TYPE:.*/TYPE:master/" "${SCRIPT_DIR}/dns_data.txt"
     echo "${_slaveip} 등록이 완료되었습니다."
 }
 

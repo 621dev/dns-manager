@@ -14,6 +14,7 @@ SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 LOG_FILE="$SCRIPT_DIR/dns_manager.log"  # 로그파일 경로, 이 스크립트에서 함수가 호출된 모든 스크립트가 사용이 가능하다. 
 DNS_IP=$(hostname -I | awk '{print $1}')  # 여러 개의 ip 주소가 할당되있을 경우를 고려하여 첫번째 IP만 가져옴
 DNS_TYPE="none"
+DNS_RUNNING="false"
 
 source "$SCRIPT_DIR/dns_crud.sh"
 source "$SCRIPT_DIR/zone_manager.sh"
@@ -34,10 +35,11 @@ do
         echo "DNS 서비스 설치됨 ($BIND_VERSION)"
 
         # 실행 여부
-        if is_named_running; then
+        DNS_RUNNING=$(is_named_running)
+        if [ "$DNS_RUNNING" == "true" ]; then
             echo "서비스 상태 : 실행 중"
         else
-            echo "서비스 상태 : 중지됨"
+            echo "서비스 상태 : 중지됨 (dns를 실행 하려면 startDNS를 입력해주세요.)"
         fi
 
         # 마스터/슬레이브 타입
@@ -45,7 +47,8 @@ do
         case $DNS_TYPE in
             master) echo "서버 타입   : Master" ;;
             slave)  echo "서버 타입   : Slave"  ;;
-            none)   echo "서버 타입   : Zone 없음" ;;
+            none)   echo "서버 타입   : none" ;;
+            *)      echo "서버 타입   : 알 수 없음" ;;
         esac
     else
         echo "DNS 서비스 미설치"
@@ -60,6 +63,10 @@ do
     echo "==============================================="
     read -p "원하는 작업을 선택하세요: " INPUT
     if [ "$INPUT" == "q" ]; then exit 0; fi
+    if [[ "$DNS_RUNNING" == "false" && "$INPUT" == "startDNS" ]]; then
+        systemctl start named
+        continue
+    fi
     if [ -n "$BIND_VERSION" ]; then     # DNS 서버 설치
         case $INPUT in
             1)
@@ -95,15 +102,3 @@ do
         esac
     fi
 done
-
-
-
-# 슬레이브 변경
-# 존 파일 수정 (refresh, retry, expire, minimum)
-# 환경설정 - named.conf 설정, listen-on port v6, allow-query, 슬레이브 서버 지정
-# named.conf : listen-on, allow-query 수정
-# Slave 서버 rfc1912.zones 수정
-# 자동으로 추가할 순 없을까?
-# 안되면 정방향 도메인 연속입력, 역방향 네트워크 연속입력으로 처리
-# 슬레이브 서버 지정
-# ip를 입력한 후 zone 파일 리스트를 보여주고 연속으로 입력하면 (숫자로도 가능) 자동으로 기본값으로 추가하는 형식
