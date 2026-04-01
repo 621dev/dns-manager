@@ -42,6 +42,7 @@ set_dns() {
     done
 }
 
+# TODO: 메뉴 ip v6 제외
 update_named_conf() {
     local _input=$1
     local _backuppath="$SCRIPT_DIR/dns_backup_$(date +%Y%m%d)"

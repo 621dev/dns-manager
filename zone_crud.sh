@@ -58,15 +58,15 @@ add_forward_zone() {
             break
         done
 
-        # 서비스 입력
-        _servicearr=()
-        while :
-        do
-            read -p "서비스를 입력해주세요 (www, mail, @ 등 / 다음 단계로 진행하려면 1 입력) : " _inputservice
-            if [ "$_inputservice" == "1" ]; then break; fi
-            _servicearr+=("$_inputservice")
-            echo "현재 입력된 서비스 : ${_servicearr[@]}"
-        done
+        # # 서비스 입력
+        # _servicearr=()
+        # while :
+        # do
+        #     read -p "서비스를 입력해주세요 (www, mail, @ 등 / 다음 단계로 진행하려면 1 입력) : " _inputservice
+        #     if [ "$_inputservice" == "1" ]; then break; fi
+        #     _servicearr+=("$_inputservice")
+        #     echo "현재 입력된 서비스 : ${_servicearr[@]}"
+        # done
 
         # rfc1912.zones 파일에 선언 추가
         echo "도메인 ${_inputdomain}을 추가합니다."
@@ -85,6 +85,8 @@ add_forward_zone() {
         IN NS   ns1.${_inputdomain}.
 
 ns1     IN A    ${DNS_IP}
+@       IN A    ${_inputdomain}
+
 EOF
         # zone 파일에 서비스 추가
         for _service in "${_servicearr[@]}"; do
@@ -180,6 +182,8 @@ EOF
 
 ; PTR 레코드
 EOF
+            # printf "%-7s IN PTR    %s\n" "$_hostoctet" "ns1.$_inputdomain." >> "/var/named/${_reverseip}.rev"
+            # printf "%-7s IN PTR    %s\n" "$_hostoctet" "$_inputdomain." >> "/var/named/${_reverseip}.rev"
             printf "%-7s IN PTR    %s\n" "$_hostoctet" "$_inputservice.$_inputdomain." >> "/var/named/${_reverseip}.rev"
             # zone 파일 소유자 및 그룹 권한 설정
             echo "${_reverseip}의 zone 파일 소유자 및 그룹 권한을 설정합니다."
