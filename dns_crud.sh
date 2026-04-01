@@ -53,6 +53,7 @@ EOF
     # DNS에 대한 데이터
     echo "DNS 서버에 대한 데이터를 초기화합니다."
     cat << EOF > "${SCRIPT_DIR}/dns_data.txt"
+MASTER_IP:${DNS_IP}
 SLAVE_IP:
 TYPE:none
 EOF

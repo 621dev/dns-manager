@@ -310,7 +310,7 @@ create_zone_declaration() {
     local _zone=$1
     local _zonefile=$2
     local _type=$(get_dns_type)
-    local _masterip="${DNS_IP}"
+    local _masterip=$(grep "MASTER_IP" "${SCRIPT_DIR}/dns_data.txt" | awk -F':' '{print $2}')
     local _slaveip=$(grep "SLAVE_IP" "${SCRIPT_DIR}/dns_data.txt" | awk -F':' '{print $2}')
 
     if [[ "$_type" == "master" ]]; then
@@ -331,6 +331,15 @@ zone "${_zone}" IN {
         type master;
         file "${_zonefile}";
         allow-update {none;};
+};
+EOF
+    elif [[ "$_type" == "slave" ]]; then
+        cat << EOF >> /etc/named.rfc1912.zones
+
+zone "${_zone}" IN {
+        type slave;
+        file "slaves/${_zonefile}";
+        masters { ${_masterip}; };
 };
 EOF
     fi
