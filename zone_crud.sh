@@ -85,7 +85,7 @@ add_forward_zone() {
         IN NS   ns1.${_inputdomain}.
 
 ns1     IN A    ${DNS_IP}
-@       IN A    ${_inputdomain}
+@       IN A    ${_inputip}
 
 EOF
         # zone 파일에 서비스 추가
@@ -152,7 +152,7 @@ add_reverse_zone() {
             break
         done
 
-        read -p "서비스를 입력해주세요 (www, mail, @ 등 / 이전 메뉴 복귀 q) : " _inputservice
+        read -p "서비스를 입력해주세요 (www, mail 등 / 이전 메뉴 복귀 q) : " _inputservice
         if [ "$_inputservice" == "q" ]; then return 0; fi
 
         # zone 파일 검사 (/var/named/)

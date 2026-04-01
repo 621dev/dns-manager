@@ -362,6 +362,7 @@ zone_list_reload() {
     local -a _allzones
     #_mapfile -t _allzones < <(awk -F'"' '/^zone "/ {print $2}' "$_filepath") 
     _allzones=($(awk -F'"' '/^zone "/ {print $2}' "$_filepath"))
+
     for _zone in "${_allzones[@]}"; do
         local _isdefault=false
         for _default_zone in "${_default_zones[@]}"; do
@@ -388,7 +389,7 @@ show_zone_list(){
     local _start=$(( _currentpage * _maxzonecount ))
     local _end=$(( _start + _maxzonecount ))
 
-    local _totalpages=$(( (_zonetotal - 1) / _maxzonecount ))
+    local _totalpages=$(( _zonetotal == 0 ? 0 : (_zotetotal - 1) / _maxzonecount ))
 
     echo "==============================================="
     echo "ZONE LIST"
