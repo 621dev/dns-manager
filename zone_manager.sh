@@ -350,6 +350,7 @@ split_dot() {
 
 zone_list_reload() {
     local -n _refarr=$1  # nameref - 참조로 받음
+    local _filepath=${2:-/etc/named.rfc1912.zones}
     _refarr=()
     local -a _default_zones=(
         "localhost.localdomain"
@@ -359,9 +360,8 @@ zone_list_reload() {
         "0.in-addr.arpa"
         )
     local -a _allzones
-    mapfile -t _allzones < <(awk -F'"' '/^zone "/ {print $2}' /etc/named.rfc1912.zones) 
+    mapfile -t _allzones < <(awk -F'"' '/^zone "/ {print $2}' "$_filepath") 
     
-
     for _zone in "${_allzones[@]}"; do
         _isdefault=false
         for _default_zone in "${_default_zones[@]}"; do
@@ -380,10 +380,10 @@ zone_list_reload() {
 
 # Zone 조회
 show_zone_list(){
-    local -n _refzonearr=$1
+    local -n _szl_refzonearr=$1
     local _currentpage=${2:-0}
     local _maxzonecount=7 # 최대 표시할 zone 수
-    local _zonetotal=${#_refzonearr[@]}
+    local _zonetotal=${#_szl_refzonearr[@]}
 
     local _start=$(( _currentpage * _maxzonecount ))
     local _end=$(( _start + _maxzonecount ))
@@ -394,7 +394,7 @@ show_zone_list(){
     echo "ZONE LIST"
     echo "==============================================="
     for (( i = _start; i < _end && i < _zonetotal; i++ )); do
-        echo "$((i+1)). ${_refzonearr[i]}"
+        echo "$((i+1)). ${_szl_refzonearr[i]}"
     done
     echo "==============================================="
     echo "PAGE : $((_currentpage+1)) / $((_totalpages+1)) | TOTAL ZONE COUNT : ${_zonetotal}"
@@ -407,4 +407,11 @@ update_serial() {
     local _serial=$(awk '/serial/ {print $1}' "$_zonefile")
     local _newserial=$((_serial + 1))
     sed -i "/serial/{s/${_serial}/${_newserial}/}" "$_zonefile"
+}
+
+update_decl_serial() {
+    local _datepath=$1
+    local _serial=$(awk -F':' '/ZONE_DECL_SERIAL/ {print $2}' "$_datepath")
+    local _newserial=$((_serial + 1))
+    sed -i "/^ZONE_DECL_SERIAL:.*/ZONE_DECL_SERIAL:${_newserial}/" "$_datepath"
 }

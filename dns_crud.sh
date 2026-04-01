@@ -56,6 +56,8 @@ EOF
 MASTER_IP:${DNS_IP}
 SLAVE_IP:
 TYPE:none
+ZONE_DECL_SERIAL:$(date +%Y%m%d)01
+ZONE_DECL_PATH:/etc/named.rfc1912.zones
 EOF
     echo "DNS가 설치되었습니다."
 }
