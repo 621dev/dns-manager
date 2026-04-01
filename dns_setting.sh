@@ -182,7 +182,7 @@ reload_dns_decl() {
         local _mastercnt=${#_masterzonearr[@]}
         local _slavecnt=${#_slavezonearr[@]}
         # 두 배열의 총 수를 비교
-        if ((_mastecnt > _slavecnt )); then
+        if ((_mastercnt > _slavecnt )); then
             for ((i=_slavecnt; i<_mastercnt; i++))
             do
                 _zone=${_masterzonearr[$i]}
