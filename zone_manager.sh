@@ -350,6 +350,7 @@ split_dot() {
 
 zone_list_reload() {
     local -n _refarr=$1  # nameref - 참조로 받음
+    local _filepath=${2:-/etc/named.rfc1912.zones}
     _refarr=()
     local -a _default_zones=(
         "localhost.localdomain"
@@ -359,9 +360,8 @@ zone_list_reload() {
         "0.in-addr.arpa"
         )
     local -a _allzones
-    mapfile -t _allzones < <(awk -F'"' '/^zone "/ {print $2}' /etc/named.rfc1912.zones) 
+    mapfile -t _allzones < <(awk -F'"' '/^zone "/ {print $2}' "$_filepath") 
     
-
     for _zone in "${_allzones[@]}"; do
         _isdefault=false
         for _default_zone in "${_default_zones[@]}"; do
@@ -407,4 +407,11 @@ update_serial() {
     local _serial=$(awk '/serial/ {print $1}' "$_zonefile")
     local _newserial=$((_serial + 1))
     sed -i "/serial/{s/${_serial}/${_newserial}/}" "$_zonefile"
+}
+
+update_decl_serial() {
+    local _datepath=$1
+    local _serial=$(awk -F':' '/ZONE_DECL_SERIAL/ {print $2}' "$_datepath")
+    local _newserial=$((_serial + 1))
+    sed -i "/^ZONE_DECL_SERIAL:.*/ZONE_DECL_SERIAL:${_newserial}/" "$_datepath"
 }

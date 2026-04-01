@@ -1,6 +1,5 @@
 #!/bin/bash
 # ============================================================
-# write_zone_declaration() : rfc1912.zones에 zone 선언 블록 작성 (master/slave 분기)
 # add_forward_zone()       : 정방향 Zone 선언 및 zone 파일 생성
 # add_reverse_zone()       : 역방향 Zone 선언 및 .rev 파일 생성/수정
 # domain_delete_zone()     : 도메인 기준으로 정방향 Zone 삭제
@@ -310,8 +309,8 @@ create_zone_declaration() {
     local _zone=$1
     local _zonefile=$2
     local _type=$(get_dns_type)
-    local _masterip=$(grep "MASTER_IP" "${SCRIPT_DIR}/dns_data.txt" | awk -F':' '{print $2}')
-    local _slaveip=$(grep "SLAVE_IP" "${SCRIPT_DIR}/dns_data.txt" | awk -F':' '{print $2}')
+    local _masterip=$(awk -F':' '/MASTER_IP/ {print $2}' "${SCRIPT_DIR}/dns_data.txt")
+    local _slaveip=$(awk -F':' '/SLAVE_IP/ {print $2}' "${SCRIPT_DIR}/dns_data.txt")
 
     if [[ "$_type" == "master" ]]; then
         cat << EOF >> /etc/named.rfc1912.zones
@@ -324,7 +323,7 @@ zone "${_zone}" IN {
         also-notify { ${_slaveip}; };
 };
 EOF
-    elif [[ "$_type" == "none" ]]; then  # master + slave 등록
+    elif [[ "$_type" == "none" ]]; then
         cat << EOF >> /etc/named.rfc1912.zones
 
 zone "${_zone}" IN {
@@ -343,6 +342,8 @@ zone "${_zone}" IN {
 };
 EOF
     fi
+
+    update_decl_serial "${SCRIPT_DIR}/dns_data.txt"
 }
 
 # 존 선언 삭제 ($1 : 삭제할 도메인 / 네트워크 IP (in-addr.arpa 포함))
@@ -371,6 +372,8 @@ delete_zone_declaration() {
     # 삭제
     sed -i "${_startline},${_endline}d" /etc/named.rfc1912.zones
     echo "${_target} 존 선언이 삭제되었습니다."
+
+    update_decl_serial "${SCRIPT_DIR}/dns_data.txt"
 }
 
 # 도메인, 서비스, ip를 받는 서비스 추가 함수

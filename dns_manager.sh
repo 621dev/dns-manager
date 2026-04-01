@@ -47,7 +47,7 @@ do
         DNS_TYPE=$(get_dns_type)
         case $DNS_TYPE in
             master) echo "서버 타입   : Master" ;;
-            slave)  echo "서버 타입   : Slave"  ;;
+            slave)  echo "서버 타입   : Slave (named.rfc1912.zones를 업데이트하려면 declupdate를 입력해주세요.)"  ;;
             none)   echo "서버 타입   : none" ;;
             *)      echo "서버 타입   : 알 수 없음" ;;
         esac
@@ -66,6 +66,10 @@ do
     if [ "$INPUT" == "q" ]; then exit 0; fi
     if [[ "$DNS_RUNNING" == "false" && "$INPUT" == "startDNS" ]]; then
         systemctl start named
+        continue
+    fi
+    if [[ "$DNS_TYPE" == "slave" && "$INPUT" == "declupdate" ]]; then
+        reload_dns_decl
         continue
     fi
     if [ -n "$BIND_VERSION" ]; then     # DNS 서버 설치

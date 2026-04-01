@@ -119,6 +119,8 @@ change_slave() {
             create_zone_declaration "$_zone" "${_zone}.zone"
         fi        
     done
+
+    rndc reload
 }
 
 register_slave() {
@@ -162,4 +164,35 @@ update_hostname() {
     read -p "새로운 hostname을 입력해주세요 : " _hostname
     hostnamectl set-hostname "$_hostname"
     echo "hostname이 \"$_hostname\"(으)로 변경되었습니다."
+}
+
+# named.rfc1219.named 파일을 갱신
+reload_dns_decl() {
+    local -a _masterzonearr=()
+    local -a _slavezonearr=()
+    zone_list_reload _slavezonearr
+
+    echo "마스터 서버(${_masterip})에서 파일을 가져오는 중..."
+    if ssh "root@${_masterip}" "cat ${_remotepath}" > "${SCRIPT_DIR}/named.rfc1912.zones" 2>> "$LOG_FILE"; then
+        echo "파일 수신 완료: ${_masterip}:${_remotepath} → ${SCRIPT_DIR}/named.rfc1912.zones"
+        zone_list_reload _masterzonearr "${SCRIPT_DIR}/named.rfc1912.zones"
+        local _mastercnt=${#_masterzonearr[@]}
+        local _slavecnt=${#_slavezonearr[@]}
+        # 두 배열의 총 수를 비교
+        if ((_mastecnt > _slavecnt )) then
+            for ((i=_slavecnt; i<_mastercnt; i++))
+            do
+                _zone=${_masterzonearr[$i]}
+                if [[ "$_zone" == *in-addr.arpa ]]; then # 역방향
+                    local _network=${_zone//.in-addr.arpa/} 
+                    create_zone_declaration "$_zone" "${_network}.rev"
+                else    # 정방향
+                    create_zone_declaration "$_zone" "${_zone}.zone"
+                fi
+            done
+        fi
+        rndc reload
+    else
+        echo "파일 수신 실패. 경로를 다시 확인해주세요."
+    fi
 }
