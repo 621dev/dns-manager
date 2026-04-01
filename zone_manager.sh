@@ -413,5 +413,5 @@ update_decl_serial() {
     local _datepath=$1
     local _serial=$(awk -F':' '/ZONE_DECL_SERIAL/ {print $2}' "$_datepath")
     local _newserial=$((_serial + 1))
-    sed -i "/^ZONE_DECL_SERIAL:.*/ZONE_DECL_SERIAL:${_newserial}/" "$_datepath"
+    sed -i "s/^ZONE_DECL_SERIAL:.*/ZONE_DECL_SERIAL:${_newserial}/" "$_datepath"
 }
