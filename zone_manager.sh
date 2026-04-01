@@ -360,10 +360,10 @@ zone_list_reload() {
         "0.in-addr.arpa"
         )
     local -a _allzones
-    mapfile -t _allzones < <(awk -F'"' '/^zone "/ {print $2}' "$_filepath") 
-    
+    #_mapfile -t _allzones < <(awk -F'"' '/^zone "/ {print $2}' "$_filepath") 
+    _allzones=($(awk -F'"' '/^zone "/ {print $2}' "$_filepath"))
     for _zone in "${_allzones[@]}"; do
-        _isdefault=false
+        local _isdefault=false
         for _default_zone in "${_default_zones[@]}"; do
             if [[ "$_zone" == "$_default_zone" ]]; then
                 _isdefault=true
