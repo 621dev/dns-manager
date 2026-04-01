@@ -170,6 +170,7 @@ update_hostname() {
 reload_dns_decl() {
     local -a _masterzonearr=()
     local -a _slavezonearr=()
+    local _remotepath="/etc/named.rfc1912.zones"
     zone_list_reload _slavezonearr
 
     echo "마스터 서버(${_masterip})에서 파일을 가져오는 중..."
