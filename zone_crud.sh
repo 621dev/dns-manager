@@ -1,13 +1,16 @@
 #!/bin/bash
 # ============================================================
-# add_forward_zone()       : 정방향 Zone 선언 및 zone 파일 생성
-# add_reverse_zone()       : 역방향 Zone 선언 및 .rev 파일 생성/수정
-# domain_delete_zone()     : 도메인 기준으로 정방향 Zone 삭제
-# network_delete_zone()    : 네트워크 대역 기준으로 역방향 Zone 전체 삭제
-# hostip_delete_zone()     : 역방향 Zone에서 특정 호스트 IP 레코드만 삭제
-# delete_zone_declaration(): rfc1912.zones에서 zone 선언 블록 삭제
-# update_service_record()  : 정방향 Zone의 A 레코드 추가/IP 변경/삭제
-# update_ptr_record()      : 역방향 Zone의 PTR 레코드 추가/변경/삭제
+# add_forward_zone()        : 정방향 Zone 선언 및 zone 파일 생성
+# add_reverse_zone()        : 역방향 Zone 선언 및 .rev 파일 생성/수정
+# domain_delete_zone()      : 도메인 기준으로 정방향 Zone 삭제
+# network_delete_zone()     : 네트워크 대역 기준으로 역방향 Zone 전체 삭제
+# hostip_delete_zone()      : 역방향 Zone에서 특정 호스트 IP 레코드만 삭제
+# create_zone_declaration() : rfc1912.zones에 zone 선언 블록 추가 (master/slave 자동 분기)
+# delete_zone_declaration() : rfc1912.zones에서 zone 선언 블록 삭제
+# add_forward_service()     : 정방향 Zone에 A 레코드 추가
+# delete_forward_service()  : 정방향 Zone에서 A 레코드 삭제
+# add_reverse_host()        : 역방향 Zone에 PTR 레코드 추가
+# delete_reverse_host()     : 역방향 Zone에서 PTR 레코드 삭제
 # ============================================================
 
 # 정방향 도메인 추가
@@ -58,15 +61,15 @@ add_forward_zone() {
             break
         done
 
-        # 서비스 입력
-        _servicearr=()
-        while :
-        do
-            read -p "서비스를 입력해주세요 (www, mail, @ 등 / 다음 단계로 진행하려면 1 입력) : " _inputservice
-            if [ "$_inputservice" == "1" ]; then break; fi
-            _servicearr+=("$_inputservice")
-            echo "현재 입력된 서비스 : ${_servicearr[@]}"
-        done
+        # # 서비스 입력
+        # _servicearr=()
+        # while :
+        # do
+        #     read -p "서비스를 입력해주세요 (www, mail, @ 등 / 다음 단계로 진행하려면 1 입력) : " _inputservice
+        #     if [ "$_inputservice" == "1" ]; then break; fi
+        #     _servicearr+=("$_inputservice")
+        #     echo "현재 입력된 서비스 : ${_servicearr[@]}"
+        # done
 
         # rfc1912.zones 파일에 선언 추가
         echo "도메인 ${_inputdomain}을 추가합니다."
@@ -85,6 +88,8 @@ add_forward_zone() {
         IN NS   ns1.${_inputdomain}.
 
 ns1     IN A    ${DNS_IP}
+@       IN A    ${_inputip}
+
 EOF
         # zone 파일에 서비스 추가
         for _service in "${_servicearr[@]}"; do
@@ -150,8 +155,8 @@ add_reverse_zone() {
             break
         done
 
-        read -p "서비스를 입력해주세요 (www, mail, @ 등 / 이전 메뉴 복귀 q) : " _inputservice
-        if [ "$_inputservice" == "q" ]; then return 0; fi
+        # read -p "서비스를 입력해주세요 (www, mail 등 / 이전 메뉴 복귀 q) : " _inputservice
+        # if [ "$_inputservice" == "q" ]; then return 0; fi
 
         # zone 파일 검사 (/var/named/)
         if [ -f "/var/named/${_reverseip}.rev" ]; then
@@ -163,7 +168,7 @@ add_reverse_zone() {
                 continue
             fi
             cat << EOF >> "/var/named/${_reverseip}.rev"
-${_hostoctet}    IN PTR  ${_inputservice}.${_inputdomain}.
+${_hostoctet}    IN PTR  ns1.${_inputdomain}.
 EOF
         else    # zone 파일이 없을 경우
             echo "${_reverseip}.rev 파일이 존재하지 않습니다. 새로 생성합니다."
@@ -180,7 +185,9 @@ EOF
 
 ; PTR 레코드
 EOF
-            printf "%-7s IN PTR    %s\n" "$_hostoctet" "$_inputservice.$_inputdomain." >> "/var/named/${_reverseip}.rev"
+            # printf "%-7s IN PTR    %s\n" "$_hostoctet" "ns1.$_inputdomain." >> "/var/named/${_reverseip}.rev"
+            # printf "%-7s IN PTR    %s\n" "$_hostoctet" "$_inputdomain." >> "/var/named/${_reverseip}.rev"
+            # printf "%-7s IN PTR    %s\n" "$_hostoctet" "$_inputservice.$_inputdomain." >> "/var/named/${_reverseip}.rev"
             # zone 파일 소유자 및 그룹 권한 설정
             echo "${_reverseip}의 zone 파일 소유자 및 그룹 권한을 설정합니다."
             chown root:named /var/named/${_reverseip}.rev

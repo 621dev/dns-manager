@@ -1,13 +1,15 @@
 #!/bin/bash
 # ============================================================
-# manage_zone()    : Zone 목록을 페이지별로 출력하고 CRUD 메뉴를 처리하는 루프
-# select_add_zone()        : 정방향/역방향 Zone 추가 메뉴
-# select_delete_zone()     : Zone 삭제 메뉴 (도메인 또는 네트워크 기준)
-# select_update_zone()     : Zone 수정 메뉴
-# check_ip()       : IP 주소 형식 및 범위 유효성 검사 (4옥텟, 0~255, 선행 0 등)
-# split_dot()      : 점(.) 기준으로 문자열을 분리하여 배열 출력
-# zone_list_reload(): /etc/named.rfc1912.zones에서 zone 목록을 배열로 갱신
-# show_zone_list() : zone 배열을 페이지 단위(7개)로 출력
+# manage_zone()        : Zone 목록을 페이지별로 출력하고 CRUD 메뉴를 처리하는 루프
+# select_add_zone()    : 정방향/역방향 Zone 추가 메뉴
+# select_delete_zone() : Zone 삭제 메뉴 (도메인 또는 네트워크 기준)
+# select_update_zone() : Zone 수정 메뉴 (서비스/호스트 추가·삭제)
+# check_ip()           : IP 주소 형식 및 범위 유효성 검사 (4옥텟, 0~255, 선행 0 등)
+# split_dot()          : 점(.) 기준으로 문자열을 분리하여 배열 출력
+# zone_list_reload()   : /etc/named.rfc1912.zones에서 zone 목록을 배열로 갱신 (기본 zone 제외)
+# show_zone_list()     : zone 배열을 페이지 단위(7개)로 출력
+# update_serial()      : zone 파일의 serial 번호를 1 증가
+# update_decl_serial() : dns_data.txt의 ZONE_DECL_SERIAL 값을 1 증가
 # ============================================================
 
 source "$SCRIPT_DIR/zone_crud.sh"
@@ -19,7 +21,7 @@ manage_zone(){
     zone_list_reload _zonearr
     while :
     do
-        sleep 1 && clear
+        sleep 2 && clear
         show_zone_list _zonearr ${_currentpage}
         echo "ZONE은 도메인과 IP 주소 간의 연결 정보를 담고 있는 파일입니다."
         echo "도메인이나 IP를 입력하여 ZONE을 추가, 수정, 삭제가 가능합니다."
@@ -159,9 +161,10 @@ select_update_zone() {
     local _input
     while :
     do
-        sleep 1 && clear
+        sleep 2 && clear
         ## TODO : zone 선언 수정
-        show_zone_list "${!_refzonearr}" 0
+        # show_zone_list "${!_refzonearr}" 0
+        show_zone_list _refzonearr 0
         echo "-----------------------------------------------"
         echo "1. 서비스 수정"
         echo "2. 호스트 수정"
@@ -360,10 +363,11 @@ zone_list_reload() {
         "0.in-addr.arpa"
         )
     local -a _allzones
-    mapfile -t _allzones < <(awk -F'"' '/^zone "/ {print $2}' "$_filepath") 
-    
+    #_mapfile -t _allzones < <(awk -F'"' '/^zone "/ {print $2}' "$_filepath") 
+    _allzones=($(awk -F'"' '/^zone "/ {print $2}' "$_filepath"))
+
     for _zone in "${_allzones[@]}"; do
-        _isdefault=false
+        local _isdefault=false
         for _default_zone in "${_default_zones[@]}"; do
             if [[ "$_zone" == "$_default_zone" ]]; then
                 _isdefault=true
@@ -388,7 +392,7 @@ show_zone_list(){
     local _start=$(( _currentpage * _maxzonecount ))
     local _end=$(( _start + _maxzonecount ))
 
-    local _totalpages=$(( (_zonetotal - 1) / _maxzonecount ))
+    local _totalpages=$(( _zonetotal == 0 ? 1 : (_zonetotal - 1) / _maxzonecount ))
 
     echo "==============================================="
     echo "ZONE LIST"
@@ -413,5 +417,5 @@ update_decl_serial() {
     local _datepath=$1
     local _serial=$(awk -F':' '/ZONE_DECL_SERIAL/ {print $2}' "$_datepath")
     local _newserial=$((_serial + 1))
-    sed -i "/^ZONE_DECL_SERIAL:.*/ZONE_DECL_SERIAL:${_newserial}/" "$_datepath"
+    sed -i "s/^ZONE_DECL_SERIAL:.*/ZONE_DECL_SERIAL:${_newserial}/" "$_datepath"
 }

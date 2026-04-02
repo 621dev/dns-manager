@@ -1,7 +1,10 @@
 #!/bin/bash
 # ============================================================
-# install_named() : BIND 패키지 설치 및 named.conf/resolv.conf/방화벽/SELinux 초기 설정
-# delete_named()  : 사용자 확인 후 DNS 서비스 제거, 설정 파일 백업, 방화벽 포트 해제
+# install_named()    : BIND 패키지 설치 및 named.conf/resolv.conf/방화벽/SELinux 초기 설정
+# delete_named()     : 사용자 확인 후 DNS 서비스 제거, 설정 파일 백업, 방화벽 포트 해제
+# is_named_running() : named 서비스 실행 여부 확인 (return 0: 실행 중, 1: 중지)
+# get_dns_type()     : dns_data.txt 기준 서버 타입 반환 (master | slave | none)
+# get_dns_role()     : named-checkconf -p 파싱으로 실제 zone 선언 기준 역할 반환 (master | slave | mixed | none)
 # ============================================================
 
 ## named 서비스 설치
