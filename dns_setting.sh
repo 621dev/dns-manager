@@ -180,28 +180,66 @@ reload_dns_decl() {
     local -a _slavezonearr=()
     local _remotepath="/etc/named.rfc1912.zones"
     local _masterip=$(awk -F':' '/MASTER_IP/ {print $2}' "${SCRIPT_DIR}/dns_data.txt")
-
+    local _backuppath="$SCRIPT_DIR/dns_backup_$(date +%Y%m%d)/zonefile"
+    mkdir -p "$_backuppath" &>> "$LOG_FILE"
     zone_list_reload _slavezonearr
 
     echo "마스터 서버(${_masterip})에서 파일을 가져오는 중..."
     if ssh "root@${_masterip}" "cat ${_remotepath}" > "${SCRIPT_DIR}/named.rfc1912.zones" 2>> "$LOG_FILE"; then
         echo "파일 수신 완료: ${_masterip}:${_remotepath} → ${SCRIPT_DIR}/named.rfc1912.zones"
         zone_list_reload _masterzonearr "${SCRIPT_DIR}/named.rfc1912.zones"
-        local _mastercnt=${#_masterzonearr[@]}
-        local _slavecnt=${#_slavezonearr[@]}
-        # 두 배열의 총 수를 비교
-        if ((_mastercnt > _slavecnt )); then
-            for ((i=_slavecnt; i<_mastercnt; i++))
-            do
-                _zone=${_masterzonearr[$i]}
-                if [[ "$_zone" == *in-addr.arpa ]]; then # 역방향
-                    local _network=${_zone//.in-addr.arpa/} 
-                    create_zone_declaration "$_zone" "${_network}.rev"
-                else    # 정방향
-                    create_zone_declaration "$_zone" "${_zone}.zone"
-                fi
-            done
-        fi
+        local _add_zones=()
+        local _del_zones=()
+        # 분류
+        for _zone in "${_masterzonearr[@]}"; do
+            if [[ ! " ${_slavezonearr[*]} " =~ " ${_zone} " ]]; then
+                _add_zones+=("$_zone")
+            fi
+        done
+
+        for _zone in "${_slavezonearr[@]}"; do
+            if [[ ! " ${_masterzonearr[*]} " =~ " ${_zone} " ]]; then
+                _del_zones+=("$_zone")
+            fi
+        done
+
+        echo "추가 대상: ${_add_zones[*]:-none}"
+        echo "삭제 대상: ${_del_zones[*]:-none}"
+
+        # 마스터에만 있는 존 선언을 슬레이브에 추가
+        for _zone in "${_add_zones[@]}"
+        do
+            echo "$_zone 선언을 추가합니다." 
+            if [[ "$_zone" == *in-addr.arpa ]]; then # 역방향
+                local _network=${_zone//.in-addr.arpa/}
+                create_zone_declaration "$_zone" "${_network}.rev"
+            else    # 정방향
+                create_zone_declaration "$_zone" "${_zone}.zone"
+            fi
+        done
+
+        # 슬레이브에만 있는 존 선언을 삭제 (존파일도 같이 삭제)
+        for _zone in "${_del_zones[@]}"
+        do
+            echo "$_zone 선언을 삭제합니다." 
+            delete_zone_declaration "$_zone"
+            if [[ "$_zone" == *in-addr.arpa ]]; then # 역방향
+                local _network=${_zone//.in-addr.arpa/}
+                local _revfile="/var/named/${_network}.rev"
+                # zone 파일 백업 후 삭제 (network_delete_zone에서 가져옴 추후 통합)
+                cp "$_revfile" "$_backuppath/${_network}.rev_$(date +%Y%m%d_%H%M).bak" &>> "$LOG_FILE"
+                echo "${_network}.rev 파일이 백업되었습니다. (백업 위치 : $_backuppath/zonefile/)"
+                rm -f "$_revfile"
+                echo "${_network}.in-addr.arpa 역방향 네트워크가 삭제되었습니다."
+            else    # 정방향
+                # zone 파일을 백업 후 삭제 (domain_delete_zone에서 가져옴 추후 통합)
+                cp "/var/named/${_zone}.zone" "$_backuppath/${_zone}.zone_$(date +%Y%m%d_%H%M).bak" &>> "$LOG_FILE"
+                echo "${_zone}.zone 파일이 백업되었습니다. (백업 위치 : $_backuppath/${_zone}.zone_$(date +%Y%m%d_%H%M).bak)"
+                rm -f "/var/named/${_zone}.zone"
+                echo "${_zone} 도메인이 삭제되었습니다."
+            fi    
+        done
+
         rndc reload
     else
         echo "파일 수신 실패. 경로를 다시 확인해주세요."

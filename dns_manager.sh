@@ -29,7 +29,7 @@ fi
 # 메인 메뉴
 while : 
 do
-    clear
+    sleep 2 && clear
     BIND_VERSION=$(rpm -qa bind)
     echo "==============================================="
     if [ -n "$BIND_VERSION" ]; then   # -n : 문자열의 길이가 0보다 크면 참

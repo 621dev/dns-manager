@@ -21,7 +21,7 @@ manage_zone(){
     zone_list_reload _zonearr
     while :
     do
-        sleep 1 && clear
+        sleep 2 && clear
         show_zone_list _zonearr ${_currentpage}
         echo "ZONE은 도메인과 IP 주소 간의 연결 정보를 담고 있는 파일입니다."
         echo "도메인이나 IP를 입력하여 ZONE을 추가, 수정, 삭제가 가능합니다."
@@ -161,9 +161,10 @@ select_update_zone() {
     local _input
     while :
     do
-        sleep 1 && clear
+        sleep 2 && clear
         ## TODO : zone 선언 수정
-        show_zone_list "${!_refzonearr}" 0
+        # show_zone_list "${!_refzonearr}" 0
+        show_zone_list _refzonearr 0
         echo "-----------------------------------------------"
         echo "1. 서비스 수정"
         echo "2. 호스트 수정"
@@ -391,7 +392,7 @@ show_zone_list(){
     local _start=$(( _currentpage * _maxzonecount ))
     local _end=$(( _start + _maxzonecount ))
 
-    local _totalpages=$(( _zonetotal == 0 ? 0 : (_zotetotal - 1) / _maxzonecount ))
+    local _totalpages=$(( _zonetotal == 0 ? 1 : (_zonetotal - 1) / _maxzonecount ))
 
     echo "==============================================="
     echo "ZONE LIST"

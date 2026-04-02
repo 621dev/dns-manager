@@ -155,8 +155,8 @@ add_reverse_zone() {
             break
         done
 
-        read -p "서비스를 입력해주세요 (www, mail 등 / 이전 메뉴 복귀 q) : " _inputservice
-        if [ "$_inputservice" == "q" ]; then return 0; fi
+        # read -p "서비스를 입력해주세요 (www, mail 등 / 이전 메뉴 복귀 q) : " _inputservice
+        # if [ "$_inputservice" == "q" ]; then return 0; fi
 
         # zone 파일 검사 (/var/named/)
         if [ -f "/var/named/${_reverseip}.rev" ]; then
@@ -168,7 +168,7 @@ add_reverse_zone() {
                 continue
             fi
             cat << EOF >> "/var/named/${_reverseip}.rev"
-${_hostoctet}    IN PTR  ${_inputservice}.${_inputdomain}.
+${_hostoctet}    IN PTR  ns1.${_inputdomain}.
 EOF
         else    # zone 파일이 없을 경우
             echo "${_reverseip}.rev 파일이 존재하지 않습니다. 새로 생성합니다."
@@ -187,7 +187,7 @@ EOF
 EOF
             # printf "%-7s IN PTR    %s\n" "$_hostoctet" "ns1.$_inputdomain." >> "/var/named/${_reverseip}.rev"
             # printf "%-7s IN PTR    %s\n" "$_hostoctet" "$_inputdomain." >> "/var/named/${_reverseip}.rev"
-            printf "%-7s IN PTR    %s\n" "$_hostoctet" "$_inputservice.$_inputdomain." >> "/var/named/${_reverseip}.rev"
+            # printf "%-7s IN PTR    %s\n" "$_hostoctet" "$_inputservice.$_inputdomain." >> "/var/named/${_reverseip}.rev"
             # zone 파일 소유자 및 그룹 권한 설정
             echo "${_reverseip}의 zone 파일 소유자 및 그룹 권한을 설정합니다."
             chown root:named /var/named/${_reverseip}.rev
