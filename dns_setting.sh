@@ -31,7 +31,7 @@ set_dns() {
                     echo "============================================"
                     echo "named.conf 설정 수정"
                     echo "1. listen-on      (IPv4 리슨 주소)"
-                    echo "2. listen-on-v6   (IPv6 리슨 주소)"
+                    echo "2. allow query 수정"
                     echo "q. 이전 메뉴 복귀"
                     echo "============================================"
                     read -p "원하는 작업을 선택하세요 : " _input
@@ -62,10 +62,6 @@ update_named_conf() {
             sed -i "s/listen-on port 53 { .* };/listen-on port 53 { ${_listenonip}; };/" "/etc/named.conf"
             ;;
         2)
-            read -p "listen-on-v6 값 입력 (예: none | [::1]) : " _listenonip
-            sed -i "s/listen-on-v6 port 53 { .* };/listen-on-v6 port 53 { ${_listenonip}; };/" "/etc/named.conf" 
-            ;;
-        3)
             read -p "allow-query 값 입력 : " _allowquery
             sed -i "s/allow-query { .* };/allow-query { ${_allowquery}; };/" "/etc/named.conf" 
             ;;
@@ -87,6 +83,8 @@ change_slave() {
         if check_ip "$_masterip"; then break; fi
     done
 
+    # TODO : 마스터 서버의 타입이 none이면 전환 취소
+    
     # 마스터 서버로부터 named.rfc1912.zones 파일 가져오기
     local _remotepath
     while :
@@ -164,6 +162,7 @@ register_slave() {
         fi
     done
     echo "${_slaveip} 등록이 완료되었습니다."
+    rndc reload
 }
 
 
@@ -202,10 +201,11 @@ reload_dns_decl() {
                 _del_zones+=("$_zone")
             fi
         done
-
+        echo "==============================================="
         echo "추가 대상: ${_add_zones[*]:-none}"
         echo "삭제 대상: ${_del_zones[*]:-none}"
-
+        echo "==============================================="
+        sleep 2
         # 마스터에만 있는 존 선언을 슬레이브에 추가
         for _zone in "${_add_zones[@]}"
         do

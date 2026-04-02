@@ -61,16 +61,6 @@ add_forward_zone() {
             break
         done
 
-        # # 서비스 입력
-        # _servicearr=()
-        # while :
-        # do
-        #     read -p "서비스를 입력해주세요 (www, mail, @ 등 / 다음 단계로 진행하려면 1 입력) : " _inputservice
-        #     if [ "$_inputservice" == "1" ]; then break; fi
-        #     _servicearr+=("$_inputservice")
-        #     echo "현재 입력된 서비스 : ${_servicearr[@]}"
-        # done
-
         # rfc1912.zones 파일에 선언 추가
         echo "도메인 ${_inputdomain}을 추가합니다."
         create_zone_declaration "${_inputdomain}" "${_inputdomain}.zone"
@@ -123,8 +113,8 @@ add_reverse_zone() {
         _hostoctet=""
 
         echo "============================================"
-        echo "IP를 입력해주세요"
-        echo "(예 : 192.168.10.125)"
+        echo "기준 IP를 입력해주세요"
+        echo "(예 : 192.168.10.1)"
         echo "q.이전 메뉴 복귀"
         echo "============================================"
         read -p "IP : " _inputip
@@ -134,13 +124,14 @@ add_reverse_zone() {
         _hostoctet=${_iparr[3]}
         # zone 선언 검사
         local _reverseip="${_iparr[2]}.${_iparr[1]}.${_iparr[0]}"   # ip 대역대
-        if ! grep -E "^zone[[:space:]]+\"${_reverseip}\.in-addr\.arpa\"[[:space:]]+IN" /etc/named.rfc1912.zones &>> "$LOG_FILE"; then    # zone으로 시작하고 "${_reverseip}\.in-addr\.arpa\" IN"으로 끝나는 줄.
-            echo "${_reverseip} 대역대는 선언되지 않았습니다."
-
-            # rfc1912.zones 파일에 선언 추가
-            echo "rfc1912.zones에 ${_reverseip} 대역대를 선언합니다."
-            create_zone_declaration "${_reverseip}.in-addr.arpa" "${_reverseip}.rev"
+        if grep -E "^zone[[:space:]]+\"${_reverseip}\.in-addr\.arpa\"[[:space:]]+IN" /etc/named.rfc1912.zones &>> "$LOG_FILE"; then    # zone으로 시작하고 "${_reverseip}\.in-addr\.arpa\" IN"으로 끝나는 줄.
+            echo "${_reverseip} 대역대는 이미 선언되었습니다."
+            echo "hostIp는 Zone 수정에서 진행할 수 있습니다."
+            return 1
         fi
+
+        echo "rfc1912.zones에 ${_reverseip} 대역대를 선언합니다."
+        create_zone_declaration "${_reverseip}.in-addr.arpa" "${_reverseip}.rev"
 
         while :
         do
@@ -175,7 +166,7 @@ EOF
             cat << EOF > "/var/named/${_reverseip}.rev"
 \$TTL 3H
 @       IN SOA  ns1.${_inputdomain}. adminemail. (
-                                        ${_serial}   ; serial
+                                        ${_serial}  ; serial
                                         1D          ; refresh
                                         1H          ; retry
                                         1W          ; expire
@@ -185,9 +176,8 @@ EOF
 
 ; PTR 레코드
 EOF
-            # printf "%-7s IN PTR    %s\n" "$_hostoctet" "ns1.$_inputdomain." >> "/var/named/${_reverseip}.rev"
+            printf "%-7s IN PTR    %s\n" "$_hostoctet" "ns1.$_inputdomain." >> "/var/named/${_reverseip}.rev"
             # printf "%-7s IN PTR    %s\n" "$_hostoctet" "$_inputdomain." >> "/var/named/${_reverseip}.rev"
-            # printf "%-7s IN PTR    %s\n" "$_hostoctet" "$_inputservice.$_inputdomain." >> "/var/named/${_reverseip}.rev"
             # zone 파일 소유자 및 그룹 권한 설정
             echo "${_reverseip}의 zone 파일 소유자 및 그룹 권한을 설정합니다."
             chown root:named /var/named/${_reverseip}.rev
@@ -505,3 +495,5 @@ delete_reverse_host() {
     echo "${_hostip}가 삭제되었습니다."
     rndc reload
 }
+
+# 

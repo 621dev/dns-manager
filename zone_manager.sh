@@ -159,6 +159,8 @@ select_delete_zone() {
 select_update_zone() {
     local -n _refzonearr=$1
     local _input
+    local _service_arr=()
+    local _ip_arr=()
     while :
     do
         sleep 2 && clear
@@ -174,7 +176,7 @@ select_update_zone() {
         case "$_input" in
             1)
                 read -p "수정할 도메인을 입력해주세요 (q. 취소) : " _domain
-                if [ "$_domain" == "q" ]; then continue; fi
+                if [ "$_domain" == "q" ] || [ "$_domain" == "Q" ]; then continue; fi
                 # zone 선언 파일 검사 (/etc/named.rfc1912.zone)
                 if ! grep -E "^zone[[:space:]]+\"${_domain}\"[[:space:]]+IN" /etc/named.rfc1912.zones &>> "$LOG_FILE"; then
                     echo "${_domain} 도메인이 선언되어 있지 않습니다."
@@ -192,6 +194,7 @@ select_update_zone() {
                     echo "==============================================="
                     echo "현재 입력된 도메인 : ${_domain}"  # TODO : 서비스 목록도 보여줘야함
                     echo "-----------------------------------------------"
+                    show_service_list ${_domain} _service_arr _ip_arr 0
                     echo "1. 서비스 추가"
                     echo "2. 서비스 삭제"
                     echo "q. 이전 메뉴 복귀"
@@ -218,7 +221,7 @@ select_update_zone() {
                                 delete_forward_service "$_domain" "$_service"
                             done
                             ;;
-                        "q")
+                        "q" | "Q")
                             break
                             ;;
                         *)
@@ -287,7 +290,7 @@ select_update_zone() {
                                 delete_reverse_host "$_reverseip" "$_hostip"
                             done
                             ;;
-                        "q")
+                        "q" | "Q")
                             break
                             ;;
                         *)
@@ -296,7 +299,7 @@ select_update_zone() {
                     esac
                 done
                 ;;
-            "q")
+            "q" | "Q")
                 return 0
                 ;;
             *)
@@ -404,6 +407,48 @@ show_zone_list(){
     echo "PAGE : $((_currentpage+1)) / $((_totalpages+1)) | TOTAL ZONE COUNT : ${_zonetotal}"
     echo "==============================================="
 }
+
+# 서비스 리스트 리로드
+reload_service_list(){
+    local _rsl_filepath="/var/named/${1}.zone"
+    local -n _rsl_ref_service_arr=$2
+    local -n _rsl_ref_ip_arr=$3
+    _rsl_ref_service_arr=()
+    _rsl_ref_ip_arr=()
+    
+    # 디폴트 제외 로직은 필요하면 만들자
+    _rsl_ref_service_arr=($(awk '/IN A/ {print $1}' "$_rsl_filepath"))
+    _rsl_ref_ip_arr=($(awk '/IN A/ {print $4}' "$_rsl_filepath"))
+}
+
+# 서비스 리스트 조회
+show_service_list(){
+    local _domain=$1
+    local -n _ssl_ref_service_arr=$2
+    local -n _ssl_ref_ip_arr=$3
+
+    reload_service_list "$_domain" "$2" "$3"
+
+    local _cur_page=${4:-0}
+    local _max_service_cnt=7 # 최대 표시할 서비스 수
+    local _service_total=${#_ssl_ref_service_arr[@]}
+
+    local _start=$(( _cur_page * _max_service_cnt ))
+    local _end=$(( _start + _max_service_cnt ))
+
+    local _totalpages=$(( _service_total == 0 ? 1 : (_service_total - 1) / _max_service_cnt ))
+    
+    # TODO : 텍스트 정렬만 좀 하자
+    echo "==============================================="
+    for (( i = _start; i < _end && i < _service_total; i++ )); do
+        echo "$((i+1)). ${_ssl_ref_service_arr[i]} (${_ssl_ref_ip_arr[i]})"
+    done
+    echo "-----------------------------------------------"
+    echo "PAGE : $((_cur_page+1)) / $((_totalpages+1)) | TOTAL SERVICE COUNT : ${_service_total}"
+    echo "==============================================="
+}
+
+# 호스트 리스트 조회
 
 # ZONE 파일 경로를 받아 Serial 갱신
 update_serial() {
