@@ -88,7 +88,7 @@ delete_named(){
     local _isdeleterelated   # 관련 파일 삭제 여부
     while :
     do
-        read -p "DNS 서비스를 삭제하시겠습니까? (y/n) : " _isdelete
+        read -p "DNS 서비스를 삭제하시겠습니까? 서비스 관련 디렉토리, 설정 파일, zone 파일을 모두 삭제됩니다. (y/n) : " _isdelete
         case $_isdelete in
             y) 
                 echo "DNS 서비스 삭제를 진행합니다."
@@ -103,35 +103,17 @@ delete_named(){
                 ;;
         esac
     done
-    while :
-    do
-        echo "서비스 관련 디렉토리, 설정 파일, zone 파일을 삭제하시겠습니까? (y/n)"
-        echo "삭제 대상 : /etc/named*, /var/named/, /var/named/chroot/"
-        read _isdeleterelated
-        case $_isdeleterelated in
-            y)
-                # 백업 진행
-                echo "서비스 관련 디렉토리, 설정 파일, zone 파일을 삭제하기 전에 백업을 진행합니다."
-                local _backuppath="$SCRIPT_DIR/dns_backup_$(date +%Y%m%d)"
-                mkdir -p "$_backuppath" &>> $LOG_FILE
-                echo "백업 위치: $_backuppath"
-                cp -a /etc/named* "$_backuppath/" &>> $LOG_FILE
-                cp -a /var/named/ "$_backuppath/named" &>> $LOG_FILE
-                
-                echo "서비스 관련 디렉토리, 설정 파일, zone 파일을 삭제합니다."
-                rm -rf /etc/named* &>> $LOG_FILE  # /etc 폴더 안의 모든 설정 파일 제거
-                rm -rf /var/named/ &>> $LOG_FILE  # Zone 파일 제거
-                break 
-                ;;
-            n) 
-                echo "서비스 관련 디렉토리, 설정 파일, zone 파일을 남겨둡니다."
-                break
-                ;;
-            *) 
-                echo "잘못된 입력입니다. 다시 시도해주세요." 
-                ;;
-        esac
-    done
+    # 백업 진행
+    echo "서비스 관련 디렉토리, 설정 파일, zone 파일을 삭제하기 전에 백업을 진행합니다."
+    local _backuppath="$SCRIPT_DIR/dns_backup_$(date +%Y%m%d)"
+    mkdir -p "$_backuppath" &>> $LOG_FILE
+    echo "백업 위치: $_backuppath"
+    cp -a /etc/named* "$_backuppath/" &>> $LOG_FILE
+    cp -a /var/named/ "$_backuppath/named" &>> $LOG_FILE
+
+    echo "서비스 관련 디렉토리, 설정 파일, zone 파일을 삭제합니다."
+    rm -rf /etc/named* &>> $LOG_FILE  # /etc 폴더 안의 모든 설정 파일 제거
+    rm -rf /var/named/ &>> $LOG_FILE  # Zone 파일 제거
     
     # resolv.conf 초기화
     echo "resolv.conf 초기화합니다."

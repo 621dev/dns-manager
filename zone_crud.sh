@@ -337,6 +337,8 @@ zone "${_zone}" IN {
         type master;
         file "${_zonefile}";
         allow-update {none;};
+        allow-transfer { none; };
+        also-notify { };
 };
 EOF
     elif [[ "$_type" == "slave" ]]; then
