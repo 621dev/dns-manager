@@ -18,7 +18,7 @@
 add_forward_zone() {
     local _inputdomain    # 입력 받을 도메인
     local _inputip        # 입력 받을 ip
-    local _servicearr=()  # 입력 받을 서비스의 배열
+    # local _servicearr=()  # 입력 받을 서비스의 배열
     local _serial=$(date +%Y%m%d)01  # zone파일 시리얼 넘버
 
     while :
@@ -81,10 +81,10 @@ ns1     IN A    ${DNS_IP}
 @       IN A    ${_inputip}
 
 EOF
-        # zone 파일에 서비스 추가
-        for _service in "${_servicearr[@]}"; do
-            printf "%-7s IN A    %s\n" "$_service" "$_inputip" >> /var/named/${_inputdomain}.zone
-        done
+        # # zone 파일에 서비스 추가
+        # for _service in "${_servicearr[@]}"; do
+        #     printf "%-7s IN A    %s\n" "$_service" "$_inputip" >> /var/named/${_inputdomain}.zone
+        # done
 
         echo "${_inputdomain}.zone 파일이 생성을 완료하였습니다."
 
@@ -126,7 +126,7 @@ add_reverse_zone() {
         local _reverseip="${_iparr[2]}.${_iparr[1]}.${_iparr[0]}"   # ip 대역대
         if grep -E "^zone[[:space:]]+\"${_reverseip}\.in-addr\.arpa\"[[:space:]]+IN" /etc/named.rfc1912.zones &>> "$LOG_FILE"; then    # zone으로 시작하고 "${_reverseip}\.in-addr\.arpa\" IN"으로 끝나는 줄.
             echo "${_reverseip} 대역대는 이미 선언되었습니다."
-            echo "hostIp는 Zone 수정에서 진행할 수 있습니다."
+            echo "host ip 추가는 Zone 수정에서 진행할 수 있습니다."
             return 1
         fi
 
@@ -495,5 +495,3 @@ delete_reverse_host() {
     echo "${_hostip}가 삭제되었습니다."
     rndc reload
 }
-
-# 
