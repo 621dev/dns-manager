@@ -1,17 +1,10 @@
 #!/bin/bash
-# ============================================================
-# 도커 환경용 dns_crud.sh
-# 주요 변경사항:
-#   - systemctl → named 프로세스 직접 관리 (kill / named -c)
-#   - yum/rpm → dnf (Rocky Linux 9 기준)
-#   - firewall-cmd → 제거 (도커 네트워크로 포트 노출)
-#   - SELinux 처리 → 제거 (컨테이너 내부에서 비활성)
-#   - hostname -I → ip route 로 IP 취득
-# ============================================================
 
 ## named 서비스 설치 (도커: 패키지는 이미 이미지에 포함, 설정만 초기화)
 install_named(){
     echo "DNS 구축을 위한 설정을 초기화합니다."
+
+    dnf install -y bind bind-chroot bind-utils &>> $LOG_FILE
 
     # resolv.conf 서버 ip로 수정
     echo "resolv.conf 초기화합니다."
@@ -37,9 +30,11 @@ ZONE_DECL_SERIAL:$(date +%Y%m%d)01
 ZONE_DECL_PATH:/etc/named.rfc1912.zones
 EOF
 
-    # named 실행 (foreground → background로 기동)
-    named -c /etc/named.conf &>> "$LOG_FILE" &
+    # named 실행
+    named -u named -f -c /etc/named.conf &>> "$LOG_FILE" &
     echo "DNS가 시작되었습니다. (PID: $!)"
+
+    sleep 1 && named-checkconf && echo "named 정상 동작 중"
 }
 
 ## named 실행 여부 확인 (systemctl 대신 프로세스 체크)

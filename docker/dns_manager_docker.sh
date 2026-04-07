@@ -1,14 +1,5 @@
 #!/bin/bash
-# ============================================================
-# 도커 환경용 dns_manager.sh (엔트리포인트)
-# 주요 변경사항:
-#   - systemctl → pgrep/kill 기반 프로세스 직접 관리
-#   - rpm -qa bind → pgrep named (설치 여부 대신 실행 여부 체크)
-#   - 패키지는 이미지 빌드 시 설치되므로 설치/삭제 메뉴는 설정 초기화/정리로 변경
-#   - hostname -I → ip route 기반 IP 취득
-#   - LOG_FILE, dns_data.txt → /opt/dns-manager/data/ 하위로 통합
-#   - firewall-cmd, SELinux 처리 제거
-# ============================================================
+
 clear
 
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
@@ -56,8 +47,8 @@ do
     fi
 
     echo "==============================================="
-    echo "1. DNS 서비스 초기화 (named.conf 설정 적용 및 기동)"
-    echo "2. DNS 서비스 정리 (프로세스 종료 및 설정 초기화)"
+    echo "1. DNS 서비스 설치"
+    echo "2. DNS 서비스 정리"
     echo "3. DNS 설정"
     echo "4. Zone 관리"
     echo "q. 종료"
@@ -67,8 +58,8 @@ do
     if [ "$INPUT" == "q" ]; then exit 0; fi
 
     if [[ "$DNS_RUNNING" == "false" && "$INPUT" == "startDNS" ]]; then
-        named -c /etc/named.conf &>> "$LOG_FILE" &
-        echo "named를 시작했습니다."
+        named -u named -f -c /etc/named.conf &>> "$LOG_FILE" &
+        echo "DNS가 시작되었습니다. (PID: $!)"
         continue
     fi
 
